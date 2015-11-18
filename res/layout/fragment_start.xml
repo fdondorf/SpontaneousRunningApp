@@ -1,16 +1,68 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="org.spontaneous.activities.StartActivity" >
 
-    <TextView
-        android:layout_width="wrap_content"
+	<fragment
+        android:name="com.google.android.gms.maps.MapFragment"
+        android:id="@+id/map"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/btn_startActivity" />
+        class="com.google.android.gms.maps.MapFragment"
+	 />
 
-</RelativeLayout>
+	<RelativeLayout
+    	android:id="@+id/overlay"
+    	android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:layout_marginBottom="@dimen/activity_vertical_margin"
+	    android:layout_marginLeft="@dimen/activity_vertical_margin"
+	    android:layout_marginRight="@dimen/activity_vertical_margin"
+    	android:layout_gravity="bottom" >
+
+		<!-- GPS Signal Quality -->
+		<LinearLayout
+		    android:id="@+id/gpsSignal"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginLeft="@dimen/activity_vertical_margin"
+	    	android:layout_marginRight="@dimen/activity_vertical_margin"
+			android:orientation="vertical"
+			android:background="@color/grey">
+
+			<TextView android:id="@+id/gpsLat"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:background="@android:color/transparent"
+				android:text="Latidude..."/>
+
+		    <TextView android:id="@+id/gpsLng"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:background="@android:color/transparent"
+				android:text="Longitude..."
+				android:layout_below="@+id/gpsLat" />
+		</LinearLayout>
+
+		<LinearLayout
+		    android:id="@+id/startBtn"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginLeft="@dimen/activity_vertical_margin"
+	   	    android:layout_marginRight="@dimen/activity_vertical_margin"
+	   	    android:layout_below="@id/gpsSignal"
+			android:orientation="vertical">
+
+		    <!-- Start Activtiy Button -->
+			<Button android:id="@+id/btn_startActivity"
+		    	android:layout_width="fill_parent"
+		        android:layout_height="wrap_content"
+		        android:text="@string/btn_startActivity"
+		        android:textColorLink="@color/lightorange"
+		        android:textAppearance="?android:attr/textAppearanceLarge"
+		        android:textColor="@color/white"
+		        style="@style/CustomButton.Blue.Gradient"/>
+		</LinearLayout>
+	</RelativeLayout>
+</FrameLayout>

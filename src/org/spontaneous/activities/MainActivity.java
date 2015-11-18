@@ -4,6 +4,7 @@ import org.spontaneous.R;
 import org.spontaneous.fragment.MyActivitiesFragment;
 import org.spontaneous.fragment.NavigationDrawerFragment;
 import org.spontaneous.fragment.StartFragment;
+import org.spontaneous.fragment.StartFragmentMap;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -17,7 +18,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-//public class MainActivity extends ActionBarActivity implements
 public class MainActivity extends Activity implements
 		NavigationDrawerFragment.NavigationDrawerCallbacks {
 
@@ -53,17 +53,23 @@ public class MainActivity extends Activity implements
 		// update the main content by replacing fragments
 		FragmentManager fragmentManager = getFragmentManager();
 
-		if (position == 1) {
+		if (position == 0) {
 			fragmentManager
 			.beginTransaction()
 			.replace(R.id.container,
-					MyActivitiesFragment.newInstance(position, this)).commit();
+					StartFragment.newInstance(position, this)).commit();
+		}
+		else if (position == 1) {
+			fragmentManager
+			.beginTransaction()
+			.replace(R.id.container,
+					StartFragmentMap.newInstance(position, this)).commit();
 		}
 		else {
 			fragmentManager
 			.beginTransaction()
 			.replace(R.id.container,
-					StartFragment.newInstance(position, this)).commit();
+					MyActivitiesFragment.newInstance(position, this)).commit();
 		}
 	}
 

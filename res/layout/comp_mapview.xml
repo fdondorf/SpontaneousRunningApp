@@ -4,8 +4,6 @@
     android:layout_height="match_parent"
     tools:context="org.spontaneous.activities.ActivitySummaryActivity" >
 
-    <!-- <include layout="@layout/comp_save_activity_btn" /> -->
-
     <LinearLayout
     	android:id="@+id/footer"
 		android:layout_width="fill_parent"

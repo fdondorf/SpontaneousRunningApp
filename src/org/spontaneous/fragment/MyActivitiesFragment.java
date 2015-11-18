@@ -8,6 +8,8 @@ import org.spontaneous.activities.ActivitySummaryActivity;
 import org.spontaneous.activities.MainActivity;
 import org.spontaneous.activities.adapter.CustomArrayAdapter;
 import org.spontaneous.activities.model.TrackModel;
+import org.spontaneous.core.ITrackingService;
+import org.spontaneous.core.impl.TrackingServiceImpl;
 import org.spontaneous.db.GPSTracking.Tracks;
 import org.spontaneous.db.GPSTracking.TracksColumns;
 import org.spontaneous.trackservice.util.TrackingServiceConstants;
@@ -34,6 +36,7 @@ public class MyActivitiesFragment extends ListFragment {
 	private static final int RESULT_CANCELLED = 2;
 	private static final int RESULT_DELETED = 3;
 
+	private ITrackingService trackingService = TrackingServiceImpl.getInstance(this.getActivity());
 
 	/**
 	 * The fragment argument representing the section number for this
@@ -82,12 +85,15 @@ public class MyActivitiesFragment extends ListFragment {
 
 		Cursor mTracksCursor = getActivity().getContentResolver().query(Tracks.CONTENT_URI, mTrackListColumns, null, null, TracksColumns.CREATION_TIME + " DESC");
 
+	    //mTracks = trackingService.getAllTracks();
 	    mTracks = getTrackData(mTracksCursor);
 	    CustomArrayAdapter adapter = new CustomArrayAdapter(getActivity(), mTracks);
 	    setListAdapter(adapter);
 	}
 
 	private List<TrackModel> getTrackData(Cursor mTracksCursor) {
+
+		//List<TrackModel> tracks = trackingService.getAllTracks();
 
 		List<TrackModel> tracks = new ArrayList<TrackModel>();
 		if (mTracksCursor != null) {

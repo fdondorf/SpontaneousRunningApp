@@ -26,6 +26,7 @@
     <string name="action_search">Suche</string>
     <string name="action_myActivities">Meine Aktivitäten</string>
     <string name="action_startActivity">Start</string>
+     <string name="action_startMapActivity">Start Map</string>
 
     <!-- Prompts -->
     <string name="chooseActivity_prompt">Art der Aktivität</string>

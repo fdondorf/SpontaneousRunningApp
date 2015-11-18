@@ -12,6 +12,8 @@ import org.spontaneous.activities.model.GeoPointModel;
 import org.spontaneous.activities.model.SegmentModel;
 import org.spontaneous.activities.model.SplitTimeModel;
 import org.spontaneous.activities.model.TrackModel;
+import org.spontaneous.core.ITrackingService;
+import org.spontaneous.core.impl.TrackingServiceImpl;
 import org.spontaneous.db.GPSTracking.Segments;
 import org.spontaneous.db.GPSTracking.SegmentsColumns;
 import org.spontaneous.db.GPSTracking.Tracks;
@@ -24,35 +26,40 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
 
 public class SplitTimesActivity extends Activity {
 
-  private static final int REQUEST_CODE_VALUE = 1;
+	private static final String TAG = "SplitTimesActivity";
 
-  private TrackModel mTrackModel = null;
-  private List<GeoPointModel> geoPoints = null;
+	private static final int REQUEST_CODE_VALUE = 1;
 
-  private static final Float KILOMETER = 1000f;
-  private static final Float MILES = 1600f;
+	private ITrackingService trackingService = TrackingServiceImpl.getInstance(this);
 
-  // GUI
-  private ListView listView;
+	private TrackModel mTrackModel = null;
+	private List<GeoPointModel> geoPoints = null;
 
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-	  super.onCreate(savedInstanceState);
+	private static final Float KILOMETER = 1000f;
+	private static final Float MILES = 1600f;
 
-	  setContentView(R.layout.list_splittimes);
+	// GUI
+	private ListView listView;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		setContentView(R.layout.list_splittimes);
 
 	  // Enable back naavigation in action bar
 	  getActionBar().setDisplayHomeAsUpEnabled(true);
 
 	  // Get track from db
 	  Bundle data = getIntent().getExtras();
-	  mTrackModel = readTrackById(data.getLong(TrackingServiceConstants.TRACK_ID));
+	  mTrackModel = trackingService.readTrackById(data.getLong(TrackingServiceConstants.TRACK_ID));
 
 	  // Get the geopoint for the track from db
 	  geoPoints = readGeoPointsForTrack(data.getLong(TrackingServiceConstants.TRACK_ID));
@@ -90,56 +97,6 @@ public class SplitTimesActivity extends Activity {
 	  }
 
 	  return geoPointsBySegments;
-  }
-
-  private TrackModel readTrackById(Long trackId) {
-
-	  if (trackId != null) {
-	      String[] mTrackColumns = {
-	    		Tracks._ID,
-	   		   	Tracks.NAME,
-	   		   	Tracks.TOTAL_DISTANCE,
-	   		   	Tracks.TOTAL_DURATION,
-	   		   	Tracks.CREATION_TIME
-	      };
-
-	      // Read track
-	      Uri trackReadUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(trackId));
-	      Cursor mCursor = this.getContentResolver().query(trackReadUri, mTrackColumns, null, null, Tracks.CREATION_TIME);
-	      if (mCursor != null && mCursor.moveToNext()) {
-		      TrackModel trackModel = new TrackModel(
-		    		Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks._ID))),
-		    		mCursor.getString(mCursor.getColumnIndex(Tracks.NAME)),
-					Float.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.TOTAL_DISTANCE))),
-					Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.TOTAL_DURATION))),
-					Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.CREATION_TIME)))
-					);
-
-		      // Read Segments and wayPoints
-		      String[] mSegmentsColumns = {
-		    		  BaseColumns._ID,
-			   		  SegmentsColumns.TRACK,
-			   		  SegmentsColumns.START_TIME,
-			   		  SegmentsColumns.END_TIME
-			      };
-		      Uri segmentReadUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(trackId) + "/segments/");
-		      Cursor mSegmentsCursor = this.getContentResolver().query(segmentReadUri, mSegmentsColumns, null, null, Segments._ID);
-
-		      if (mSegmentsCursor != null) {
-			      SegmentModel segmentModel = null;
-			      while (mSegmentsCursor.moveToNext()) {
-			    	  segmentModel = new SegmentModel();
-			    	  segmentModel.setId(Long.valueOf(mSegmentsCursor.getString(mSegmentsCursor.getColumnIndex(Segments._ID))));
-			    	  segmentModel.setTrackId(Long.valueOf(mSegmentsCursor.getString(mSegmentsCursor.getColumnIndex(Segments.TRACK))));
-			    	  segmentModel.setStartTimeInMillis(mSegmentsCursor.getLong(mSegmentsCursor.getColumnIndex(Segments.START_TIME)));
-			    	  segmentModel.setEndTimeInMillis(mSegmentsCursor.getLong(mSegmentsCursor.getColumnIndex(Segments.END_TIME)));
-			    	  trackModel.addSegment(segmentModel);
-			      }
-		      }
-		      return trackModel;
-	      }
-	  }
-	  return null;
   }
 
   // TODO: Auslagern in Helper für Activities, die it den Trackdaten rechnen (TrackingHelper)

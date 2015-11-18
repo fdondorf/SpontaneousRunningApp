@@ -5,6 +5,8 @@ import org.spontaneous.activities.model.GeoPoint;
 import org.spontaneous.activities.model.TrackModel;
 import org.spontaneous.activities.util.DialogHelper;
 import org.spontaneous.activities.util.StringUtil;
+import org.spontaneous.core.ITrackingService;
+import org.spontaneous.core.impl.TrackingServiceImpl;
 import org.spontaneous.db.GPSTracking.Tracks;
 import org.spontaneous.trackservice.IRemoteService;
 import org.spontaneous.trackservice.IRemoteServiceCallback;
@@ -42,6 +44,8 @@ public class CurrentActivityActivity extends Activity {
 
 	private static final int RESULT_ACTIVITY_SAVED = 1;
 	private static final int RESULT_DELETED = 3;
+
+	private ITrackingService trackingService = TrackingServiceImpl.getInstance(this);
 
 	private Context mContext;
 
@@ -300,7 +304,7 @@ public class CurrentActivityActivity extends Activity {
 	private void setChronometerState(boolean start) {
 		timeWhenStopped = mChronometer.getBase() - SystemClock.elapsedRealtime();
 		//mChronometer.setBase(SystemClock.elapsedRealtime() + timeWhenStopped);
-		TrackModel trackModel = getTrackDataById(mTrackData.getTrackId());
+		TrackModel trackModel = trackingService.readTrackById(mTrackData.getTrackId()); //getTrackDataById(mTrackData.getTrackId());
 		mTrackData.setTotalTime(Long.valueOf(String.valueOf(trackModel.getTotalDuration())));
 
 		mChronometer.setBase(SystemClock.elapsedRealtime() + timeWhenStopped -

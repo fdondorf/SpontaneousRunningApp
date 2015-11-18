@@ -14,6 +14,8 @@ import org.spontaneous.activities.model.TimeModel;
 import org.spontaneous.activities.model.TrackModel;
 import org.spontaneous.activities.util.DateUtil;
 import org.spontaneous.activities.util.StringUtil;
+import org.spontaneous.core.ITrackingService;
+import org.spontaneous.core.impl.TrackingServiceImpl;
 import org.spontaneous.db.GPSTracking.Segments;
 import org.spontaneous.db.GPSTracking.SegmentsColumns;
 import org.spontaneous.db.GPSTracking.Tracks;
@@ -65,6 +67,8 @@ public class ActivitySummaryActivity extends Activity {
 
   private static final Float KILOMETER = 1000f;
 
+  private ITrackingService trackingService = TrackingServiceImpl.getInstance(this);
+
   private TrackModel mTrackModel = null;
   private List<GeoPointModel> geoPoints = null;
 
@@ -87,7 +91,7 @@ public class ActivitySummaryActivity extends Activity {
 	  Bundle data = getIntent().getExtras();
 	  mRequestCode = data.getInt(TrackingServiceConstants.REQUEST_CODE);
 
-	  mTrackModel = readTrackById(data.getLong(TrackingServiceConstants.TRACK_ID));
+	  mTrackModel = trackingService.readTrackById(data.getLong(TrackingServiceConstants.TRACK_ID)); //readTrackById(data.getLong(TrackingServiceConstants.TRACK_ID));
 
 	  // Get the geopoint for the track from db
 	  geoPoints = readGeoPointsForTrack(data.getLong(TrackingServiceConstants.TRACK_ID));
