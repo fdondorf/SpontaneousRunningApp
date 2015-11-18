@@ -1,0 +1,24 @@
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="org.spontaneous.activities.MainActivity$PlaceholderFragment"
+    android:id="@+id/layout_fragment_main"
+    android:orientation="vertical"
+    android:background="@color/grey">
+    
+    <!-- GPS Signal -->
+    <include layout="@layout/comp_gps_signal" />
+	<include layout="@layout/comp_separatorline" />
+	
+   	<!-- Activity Type -->
+	<include layout="@layout/comp_choose_activitytype_btn" />
+	<include layout="@layout/comp_separatorline" />
+    
+	<!-- Start Activtiy -->
+	<include layout="@layout/comp_start_activity_btn" />
+
+</LinearLayout>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@android:color/transparent"
+    android:orientation="vertical"
+    android:gravity="center_vertical">
+
+   <RelativeLayout
+		android:id="@+id/appIcon"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:background="@android:color/transparent"
+		android:gravity="center_horizontal"
+		android:layout_marginBottom="10dp" >
+
+        <ImageView
+            android:id="@+id/picTopLeft"
+            android:src="@drawable/ic_launcher"
+            android:layout_width="48dp"
+		    android:layout_height="48dp"
+		    android:layout_margin="1dp" />
+    </RelativeLayout>
+
+    <LinearLayout
+         	android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:background="@android:color/transparent"
+		    android:orientation="horizontal"
+		    android:gravity="center_horizontal">
+
+	       <TextView
+		        android:id="@+id/appTitle_1"
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+		        android:layout_marginRight="1pt"
+		        android:background="@android:color/transparent"
+		        android:text="@string/app_name"
+		        android:textColor="@color/blue"
+		        android:textSize="18pt"
+		    	android:textStyle="bold"
+		        android:gravity="center_horizontal" />
+	       <TextView
+		        android:id="@+id/appTitle_2"
+		        android:layout_width="match_parent"
+		        android:layout_height="wrap_content"
+		        android:layout_marginRight="1pt"
+		        android:background="@android:color/transparent"
+		        android:text="@string/app_name"
+		        android:textColor="@color/blue"
+		        android:textSize="18pt"
+		    	android:textStyle="bold"
+		        android:gravity="center_horizontal" />
+
+       </LinearLayout>
+
+       <TextView
+        android:id="@+id/copyright"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:text="@string/copyright"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="10dp"/>
+
+       <TextView
+        android:id="@+id/versionView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:text="@string/version"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:gravity="center_horizontal"/>
+
+</LinearLayout>

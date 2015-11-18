@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" 
+    	android:id="@+id/activityStatistics"
+		android:layout_width="fill_parent"
+    	android:layout_height="wrap_content"
+    	android:layout_weight="20"
+    	android:orientation="vertical"
+    	android:background="@android:color/transparent">
+    
+    <TextView android:id="@+id/view_stats_duration" 
+    	android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/duration" />
+    
+    <TextView android:id="@+id/view_stats_distance" 
+    	android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/distance" 
+        android:layout_below="@id/view_stats_duration"/>
+    
+    <TextView android:id="@+id/view_stats_average" 
+    	android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/average" 
+        android:layout_below="@id/view_stats_distance"/>
+    
+    <TextView android:id="@+id/view_stats_calories" 
+    	android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/calories" 
+        android:layout_below="@id/view_stats_average"/>
+    
+</RelativeLayout>
