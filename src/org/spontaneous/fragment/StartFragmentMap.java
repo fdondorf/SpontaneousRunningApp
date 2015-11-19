@@ -1,10 +1,18 @@
 package org.spontaneous.fragment;
 
+import java.util.Map;
+
 import org.spontaneous.R;
 import org.spontaneous.activities.CurrentActivityActivity;
 import org.spontaneous.activities.MainActivity;
 import org.spontaneous.trackservice.util.TrackingServiceConstants;
 import org.spontaneous.utility.GPSListener;
+
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -33,6 +41,7 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 	 */
 	private static final String ARG_SECTION_NUMBER = "section_number";
 
+	//private GoogleMap map = null;
 	private TextView signalView = null;
 	private TextView latView = null;
 	private TextView lngView = null;
@@ -56,13 +65,15 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.fragment_start, container, false);
 
-//	    signalView = (TextView) rootView.findViewById(R.id.gpsSignalText);
-//	    signalView.setText(R.string.gpsSignalSearching);
+		//map = ((MapFragment) getFragmentManager().findFragmentById(R.id.startMap)).getMap();
+
+	    signalView = (TextView) rootView.findViewById(R.id.gpsSignalText);
+	    signalView.setText(R.string.gpsSignalSearching);
 
 	    latView = (TextView) rootView.findViewById(R.id.gpsLat);
 	    lngView = (TextView) rootView.findViewById(R.id.gpsLng);
-//	    acView = (TextView) rootView.findViewById(R.id.gpsSignalAccurancy);
-//	    altView = (TextView) rootView.findViewById(R.id.gpsAltitude);
+	    acView = (TextView) rootView.findViewById(R.id.gpsSignalAccurancy);
+	    altView = (TextView) rootView.findViewById(R.id.gpsAltitude);
 
 	    final Button button = (Button) rootView.findViewById(R.id.btn_startActivity);
 	    button.setOnClickListener(mBtnStartActivityListener);
@@ -72,14 +83,14 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 
 	    mCurrentLocation = gpsLocationListener.getCurrentLocation();
 	 	if (mCurrentLocation != null) {
-//	 		signalView.setText(R.string.gpsSignalBad);
+	 		signalView.setText(R.string.gpsSignalBad);
 	 		latView.setText(String.valueOf(mCurrentLocation.getLatitude()));
 	 		lngView.setText(String.valueOf(mCurrentLocation.getLongitude()));
-//	 		acView.setText(String.valueOf(mCurrentLocation.getAccuracy()));
-//	 		altView.setText(String.valueOf(mCurrentLocation.getAltitude()));
+	 		acView.setText(String.valueOf(mCurrentLocation.getAccuracy()));
+	 		altView.setText(String.valueOf(mCurrentLocation.getAltitude()));
 	 	}
 	 	else {
-//	 		signalView.setText(R.string.gpsSignalSearching);
+	 		signalView.setText(R.string.gpsSignalSearching);
 	 	}
 
 	    return rootView;
@@ -118,7 +129,7 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 	@Override
 	public void onLocationChanged(Location location) {
 
-		//signalView.setText(R.string.gpsSignalSearching);
+		signalView.setText(R.string.gpsSignalSearching);
 
 		if (location != null) {
 
@@ -126,26 +137,36 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 
 			switch (gpsLocationListener.getGPSSignal()) {
 				case NO_GPS_SIGNAL:
-					//signalView.setText(R.string.gpsSignalSearching);
+					signalView.setText(R.string.gpsSignalSearching);
 					break;
 
 				case GPS_SIGNAL_BAD:
-					//signalView.setText(R.string.gpsSignalBad);
+					signalView.setText(R.string.gpsSignalBad);
 					break;
 
 				case GPS_SIGNAL_MEDIUM:
-					//signalView.setText(R.string.gpsSignalMedium);
+					signalView.setText(R.string.gpsSignalMedium);
 					break;
 
 				case GPS_SIGNAL_GOOD:
-					//signalView.setText(R.string.gpsSignalGood);
+					signalView.setText(R.string.gpsSignalGood);
 					break;
 			}
 
 	 		latView.setText(String.valueOf(mCurrentLocation.getLatitude()));
 	 		lngView.setText(String.valueOf(mCurrentLocation.getLongitude()));
-//	 		acView.setText(String.valueOf(mCurrentLocation.getAccuracy()));
-//	 		altView.setText(String.valueOf(mCurrentLocation.getAltitude()));
+	 		acView.setText(String.valueOf(mCurrentLocation.getAccuracy()));
+	 		altView.setText(String.valueOf(mCurrentLocation.getAltitude()));
+
+	 		CameraUpdate center=
+	 		        CameraUpdateFactory.newLatLng(
+	 		        		new LatLng(mCurrentLocation.getLatitude(),
+	 		        				mCurrentLocation.getLongitude()));
+	 		    CameraUpdate zoom = CameraUpdateFactory.zoomTo(15);
+
+	 		    //map.moveCamera(center);
+	 		    //map.animateCamera(zoom);
+
  	    }
 	}
 

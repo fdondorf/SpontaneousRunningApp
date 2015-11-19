@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android" 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/compGpsSignal"
 	android:layout_width="fill_parent"
 	android:layout_height="wrap_content"
@@ -9,56 +9,56 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
 	android:orientation="horizontal"
-	android:background="@color/grey">
+	android:background="@drawable/shape_border_round">
 
     <RelativeLayout
 		android:id="@+id/activtiyChooserContent"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:layout_weight="90"
-		android:gravity="center_vertical|right"
+		android:gravity="center_vertical|left"
 		android:background="@android:color/transparent">
-      			
+
       		<TextView android:id="@+id/gpsLat"
 					android:layout_width="wrap_content"
-					android:layout_height="wrap_content" 
-					android:background="@android:color/transparent" 
-					android:gravity="left" 
+					android:layout_height="wrap_content"
+					android:background="@android:color/transparent"
+					android:gravity="left"
 					android:text="Latidude..."/>
-      		
+
       		<TextView android:id="@+id/gpsLng"
 					android:layout_width="wrap_content"
-					android:layout_height="wrap_content" 
-					android:background="@android:color/transparent" 
+					android:layout_height="wrap_content"
+					android:background="@android:color/transparent"
 					android:gravity="left"
 					android:text="Longitude..."
 					android:layout_below="@+id/gpsLat" />
-      		
+
 			<TextView android:id="@+id/gpsSignalText"
 					android:layout_width="wrap_content"
-					android:layout_height="wrap_content" 
-					android:background="@android:color/transparent" 
+					android:layout_height="wrap_content"
+					android:background="@android:color/transparent"
 					android:gravity="left"
 					android:layout_toRightOf="@+id/gpsLng"/>
-			
+
 			<TextView android:id="@+id/gpsSignalAccurancy"
 					android:layout_width="wrap_content"
-					android:layout_height="wrap_content" 
-					android:background="@android:color/transparent" 
+					android:layout_height="wrap_content"
+					android:background="@android:color/transparent"
 					android:gravity="left"
 					android:text="Accuracy..."
 					android:layout_below="@+id/gpsLng"/>
-			
+
 			<TextView android:id="@+id/gpsAltitude"
 					android:layout_width="wrap_content"
-					android:layout_height="wrap_content" 
-					android:background="@android:color/transparent" 
-					android:gravity="left" 
+					android:layout_height="wrap_content"
+					android:background="@android:color/transparent"
+					android:gravity="left"
 					android:text="Altitude..."
 					android:layout_below="@+id/gpsSignalAccurancy"/>
 	</RelativeLayout>
-	
-    <!-- 
+
+    <!--
 	<ImageView
 	    	android:contentDescription="@string/chooseActivity_prompt"
 	    	android:layout_width="30dp"

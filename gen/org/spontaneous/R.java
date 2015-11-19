@@ -2570,9 +2570,10 @@ containing a value of this type.
         public static final int ic_plusone_standard_off_client=0x7f020081;
         public static final int ic_plusone_tall_off_client=0x7f020082;
         public static final int ic_process_launcher=0x7f020083;
-        public static final int notification_template_icon_bg=0x7f020086;
+        public static final int notification_template_icon_bg=0x7f020087;
         public static final int powered_by_google_dark=0x7f020084;
         public static final int powered_by_google_light=0x7f020085;
+        public static final int shape_border_round=0x7f020086;
     }
     public static final class id {
         public static final int action0=0x7f0900ab;
@@ -2667,7 +2668,6 @@ containing a value of this type.
         public static final int gpsAltitude=0x7f090088;
         public static final int gpsLat=0x7f090084;
         public static final int gpsLng=0x7f090085;
-        public static final int gpsSignal=0x7f0900a2;
         public static final int gpsSignalAccurancy=0x7f090087;
         public static final int gpsSignalText=0x7f090086;
         public static final int grayscale=0x7f09002f;
@@ -2703,7 +2703,7 @@ containing a value of this type.
         public static final int never=0x7f090043;
         public static final int none=0x7f090012;
         public static final int normal=0x7f090014;
-        public static final int overlay=0x7f0900a1;
+        public static final int overlay=0x7f0900a2;
         public static final int parentPanel=0x7f090054;
         public static final int picTopLeft=0x7f0900c1;
         public static final int production=0x7f090019;
@@ -2749,6 +2749,7 @@ containing a value of this type.
         public static final int src_over=0x7f09003f;
         public static final int standard=0x7f09000b;
         public static final int startBtn=0x7f0900a3;
+        public static final int startMap=0x7f0900a1;
         public static final int status_bar_latest_event_content=0x7f0900ad;
         public static final int strict_sandbox=0x7f09001b;
         public static final int submit_area=0x7f090073;
