@@ -2,6 +2,7 @@ package org.spontaneous.activities;
 
 import org.spontaneous.R;
 import org.spontaneous.fragment.MyActivitiesFragment;
+import org.spontaneous.fragment.MyActivitiesRESTFragment;
 import org.spontaneous.fragment.NavigationDrawerFragment;
 import org.spontaneous.fragment.StartFragment;
 import org.spontaneous.fragment.StartFragmentMap;
@@ -65,21 +66,33 @@ public class MainActivity extends Activity implements
 			.replace(R.id.container,
 					StartFragmentMap.newInstance(position, this)).commit();
 		}
-		else {
+		else if (position == 2) {
 			fragmentManager
 			.beginTransaction()
 			.replace(R.id.container,
 					MyActivitiesFragment.newInstance(position, this)).commit();
 		}
+		else {
+			fragmentManager
+			.beginTransaction()
+			.replace(R.id.container,
+					MyActivitiesRESTFragment.newInstance(position, this)).commit();
+		}
 	}
 
 	public void onSectionAttached(int number) {
 		switch (number) {
+		case 0:
+			mTitle = getString(R.string.title_start);
+			break;
 		case 1:
-			//mTitle = getString(R.string.title_section1);
+			mTitle = getString(R.string.title_startMap);
 			break;
 		case 2:
-			//mTitle = getString(R.string.title_section2);
+			mTitle = getString(R.string.title_myActivities);
+			break;
+		case 3:
+			mTitle = getString(R.string.title_myActivitiesREST);
 			break;
 		}
 	}

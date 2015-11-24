@@ -5,7 +5,6 @@
     <string name="app_name">Spontaneous-Running</string>
     <string name="hello_world">Hello world!</string>
     <string name="title_activity_test">TestActivity</string>
-    <string name="title_section1">Start</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="action_example">Example action</string>
@@ -17,6 +16,12 @@
     <string name="copyright">Copyright</string>
     <string name="version">Version</string>
 
+    <!-- Menu -->
+	<string name="title_start">Start</string>
+	<string name="title_startMap">Start Map</string>
+	<string name="title_myActivities">Aktivitäten</string>
+	<string name="title_myActivitiesREST">REST</string>
+
     <!-- Activities -->
     <string name="title_activity_login">Login</string>
     <string name="title_activity_home">Home</string>
@@ -25,8 +30,9 @@
     <string name="action_settings">Einstellungen</string>
     <string name="action_search">Suche</string>
     <string name="action_myActivities">Meine Aktivitäten</string>
+    <string name="action_myActivitiesREST">Meine REST Aktivitäten</string>
     <string name="action_startActivity">Start</string>
-     <string name="action_startMapActivity">Start Map</string>
+    <string name="action_startMapActivity">Start Map</string>
 
     <!-- Prompts -->
     <string name="chooseActivity_prompt">Art der Aktivität</string>

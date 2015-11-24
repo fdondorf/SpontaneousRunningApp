@@ -113,7 +113,8 @@ public class NavigationDrawerFragment extends Fragment {
 				android.R.id.text1, new String[] {
 						getString(R.string.action_startActivity),
 						getString(R.string.action_startMapActivity),
-						getString(R.string.action_myActivities)}));
+						getString(R.string.action_myActivities),
+						getString(R.string.action_myActivitiesREST)}));
 		mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
 		return mDrawerListView;
 	}
