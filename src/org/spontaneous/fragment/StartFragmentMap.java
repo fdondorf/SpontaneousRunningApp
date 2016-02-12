@@ -19,6 +19,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,6 +34,8 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 	private GPSListener gpsLocationListener;
 	private Location mCurrentLocation;
 
+	private Thread mSignalViewTimer = null;
+	
 	/**
 	 * The fragment argument representing the section number for this
 	 * fragment.
@@ -40,12 +43,12 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 	private static final String ARG_SECTION_NUMBER = "section_number";
 
 	private GoogleMap map = null;
-	private TextView signalView = null;
-	private TextView latView = null;
-	private TextView lngView = null;
-	private TextView acView = null;
-	private TextView altView = null;
-
+	private TextView gpsSearchTxt = null;
+	private ImageView gpsSignalView = null;
+	
+	private TextView usernameView = null; 
+	private TextView passwordView = null;
+	
 	public static StartFragmentMap newInstance(int sectionNumber, Activity parent) {
 	     StartFragmentMap fragment = new StartFragmentMap();
 
@@ -67,14 +70,13 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 		map = mf.getMap();
 		map.setMyLocationEnabled(true);
 
-	    signalView = (TextView) rootView.findViewById(R.id.gpsSignalText);
-	    signalView.setText(R.string.gpsSignalSearching);
+		gpsSearchTxt = (TextView) rootView.findViewById(R.id.gpsSearchTxt);
 
-	    latView = (TextView) rootView.findViewById(R.id.gpsLat);
-	    lngView = (TextView) rootView.findViewById(R.id.gpsLng);
-	    acView = (TextView) rootView.findViewById(R.id.gpsSignalAccurancy);
-	    altView = (TextView) rootView.findViewById(R.id.gpsAltitude);
-
+	    gpsSignalView = (ImageView) rootView.findViewById(R.id.gpsImg);
+	    
+	    usernameView = (TextView) rootView.findViewById(R.id.currentUser_username);
+	    passwordView = (TextView) rootView.findViewById(R.id.currentUser_password);
+	    
 	    final Button button = (Button) rootView.findViewById(R.id.btn_startActivity);
 	    button.setOnClickListener(mBtnStartActivityListener);
 
@@ -83,19 +85,55 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 
 	    mCurrentLocation = gpsLocationListener.getCurrentLocation();
 	 	if (mCurrentLocation != null) {
-	 		signalView.setText(R.string.gpsSignalBad);
-	 		latView.setText(String.valueOf(mCurrentLocation.getLatitude()));
-	 		lngView.setText(String.valueOf(mCurrentLocation.getLongitude()));
-	 		acView.setText(String.valueOf(mCurrentLocation.getAccuracy()));
-	 		altView.setText(String.valueOf(mCurrentLocation.getAltitude()));
+	 		gpsSignalView.setImageResource(R.drawable.ic_connection_excellent);
+	 		onLocationChanged(mCurrentLocation);
 	 	}
 	 	else {
-	 		signalView.setText(R.string.gpsSignalSearching);
+//	 		signalView.setText(R.string.gpsSignalSearching);
+	 		gpsSignalView.setImageResource(R.drawable.ic_connection_gone);
+	 		gpsSearchTxt.setText(R.string.gpsSignalSearching);
+	 		updateGpsSignalImage(rootView, this);
 	 	}
 
+	 	getCurrentUser();
+	 	
 	    return rootView;
 	}
 
+	public static void updateGpsSignalImage(View rootView, Fragment fragment) {
+		
+		final ImageView gpsSignalView = (ImageView) rootView.findViewById(R.id.gpsImg);
+		
+		fragment.getActivity().runOnUiThread(new Thread() {
+			int counter = 3;
+			public void run() {
+				 try {  
+					 	Thread.sleep(500);
+	                    if (counter == 3) {
+	                    	counter = 0;
+	                    }
+	                    else {
+	                    	counter++;
+	                    }
+	               } catch (InterruptedException e) {  
+	                   e.printStackTrace();  
+	               } finally {
+	                	if (counter == 0)
+	                		gpsSignalView.setImageResource(R.drawable.ic_connection_gone);
+	                	else if (counter == 1) {
+	                		gpsSignalView.setImageResource(R.drawable.ic_connection_bad);           		
+	                	}
+	                	else if (counter == 2) {
+	                		gpsSignalView.setImageResource(R.drawable.ic_connection_good);                		
+	                	}
+	                	else if (counter == 3) {
+	                		gpsSignalView.setImageResource(R.drawable.ic_connection_excellent);                		
+	                	}
+	                }
+			}
+		});
+	}
+	
 	@Override
 	public void onAttach(Activity activity) {
 	    super.onAttach(activity);
@@ -129,34 +167,31 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 	@Override
 	public void onLocationChanged(Location location) {
 
-		signalView.setText(R.string.gpsSignalSearching);
-
 		if (location != null) {
 
 			mCurrentLocation = gpsLocationListener.getBetterLocation(location);
-
+			gpsSearchTxt.setText(R.string.gpsSignal);
+			if (mSignalViewTimer != null) {
+				//mSignalViewTimer.stop();
+				mSignalViewTimer = null;
+			}
 			switch (gpsLocationListener.getGPSSignal()) {
 				case NO_GPS_SIGNAL:
-					signalView.setText(R.string.gpsSignalSearching);
+			 		gpsSignalView.setImageResource(R.drawable.ic_connection_gone);
 					break;
 
 				case GPS_SIGNAL_BAD:
-					signalView.setText(R.string.gpsSignalBad);
+			 		gpsSignalView.setImageResource(R.drawable.ic_connection_bad);
 					break;
 
 				case GPS_SIGNAL_MEDIUM:
-					signalView.setText(R.string.gpsSignalMedium);
+			 		gpsSignalView.setImageResource(R.drawable.ic_connection_good);
 					break;
 
 				case GPS_SIGNAL_GOOD:
-					signalView.setText(R.string.gpsSignalGood);
+			 		gpsSignalView.setImageResource(R.drawable.ic_connection_excellent);
 					break;
 			}
-
-	 		latView.setText(String.valueOf(mCurrentLocation.getLatitude()));
-	 		lngView.setText(String.valueOf(mCurrentLocation.getLongitude()));
-	 		acView.setText(String.valueOf(mCurrentLocation.getAccuracy()));
-	 		altView.setText(String.valueOf(mCurrentLocation.getAltitude()));
 
 	 		CameraUpdate center=
 	 		        CameraUpdateFactory.newLatLng(
@@ -231,5 +266,9 @@ public class StartFragmentMap extends Fragment implements LocationListener {
 	public void onProviderDisabled(String provider) {
 	    Toast.makeText(getActivity(), "Disabled provider " + provider,
 		        Toast.LENGTH_SHORT).show();
+	}
+	
+	private void getCurrentUser() {
+		//TODO: REST-Call
 	}
 }

@@ -14,6 +14,13 @@ import android.preference.PreferenceManager;
  */
 public class Constants
 {
+   public static final String PREFERENCES = "org.spontaneous.Prefs" ;
+   public static final String PREF_USERID = "org.spontaneous.UserId";
+   public static final String PREF_FIRSTNAME = "org.spontaneous.Firstname";
+   public static final String PREF_LASTNAME = "org.spontaneous.Lastname";
+   public static final String PREF_EMAIL = "org.spontaneous.Email";
+   public static final String PREF_STAY_LOGGED = "org.spontaneous.StayLogged";
+   
    public static final String DISABLEBLANKING = "disableblanking";
    public static final String DISABLEDIMMING = "disabledimming";
    public static final String SATELLITE = "SATELLITE";
@@ -70,6 +77,8 @@ public class Constants
    public static final String OSM_VISIBILITY = "OSM_VISIBILITY";
    public static final String DATASOURCES_KEY = "DATASOURCES";
 
+   public static final Float KILOMETER = 1000f;
+   
    /**
     * Broadcast intent action indicating that the logger service state has changed. Includes the logging state and its precision.
     * 

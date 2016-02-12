@@ -13,6 +13,7 @@ import java.util.concurrent.Semaphore;
 
 import org.spontaneous.R;
 import org.spontaneous.activities.CurrentActivityActivity;
+import org.spontaneous.activities.util.CustomExceptionHandler;
 import org.spontaneous.db.GPSTracking.Media;
 import org.spontaneous.db.GPSTracking.MetaData;
 import org.spontaneous.db.GPSTracking.Tracks;
@@ -54,7 +55,7 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
-import android.support.v7.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -518,15 +519,14 @@ public class GPSLoggerService extends Service implements LocationListener {
     * method directly. Be sure to call super.onCreate().
     */
    @Override
-   public void onCreate()
-   {
+   public void onCreate() {
       super.onCreate();
-      if (DEBUG)
-      {
+      if (DEBUG) {
          Log.d(TAG, "onCreate()");
-      }
-      ;
+      };
 
+      registerExceptionHandler();
+      
       GPSLoggerServiceThread looper = new GPSLoggerServiceThread();
       looper.start();
       try
@@ -932,7 +932,7 @@ public class GPSLoggerService extends Service implements LocationListener {
       CharSequence tickerText = getResources().getString(R.string.service_start);
       long when = System.currentTimeMillis();
 
-      NotificationCompat.Builder builder = new NotificationCompat.Builder(
+      Notification.Builder builder = new Notification.Builder(
               this);
       mNotification = builder.setSmallIcon(icon).setTicker(tickerText).setWhen(when)
               .setContentText(tickerText).setOngoing(true).build();
@@ -1013,7 +1013,7 @@ public class GPSLoggerService extends Service implements LocationListener {
       Intent notificationIntent = new Intent(this, CurrentActivityActivity.class);
       PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, Intent.FLAG_ACTIVITY_NEW_TASK);
 
-      NotificationCompat.Builder builder = new NotificationCompat.Builder(
+      Notification.Builder builder = new Notification.Builder(
               this);
       Notification signalNotification = builder.setContentIntent(contentIntent)
               .setSmallIcon(icon).setTicker(tickerText).setWhen(when)
@@ -1036,7 +1036,7 @@ public class GPSLoggerService extends Service implements LocationListener {
       notificationIntent.setData(ContentUris.withAppendedId(Tracks.CONTENT_URI, mTrackId));
       PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, Intent.FLAG_ACTIVITY_NEW_TASK);
 
-      NotificationCompat.Builder builder = new NotificationCompat.Builder(
+      Notification.Builder builder = new Notification.Builder(
               this);
       Notification gpsNotification = builder.setContentIntent(contentIntent)
               .setSmallIcon(icon).setTicker(tickerText).setWhen(when)
@@ -1597,4 +1597,11 @@ public class GPSLoggerService extends Service implements LocationListener {
       }
 
    }
+   
+	private void registerExceptionHandler() {
+		if(!(Thread.getDefaultUncaughtExceptionHandler() instanceof CustomExceptionHandler)) {
+			Thread.setDefaultUncaughtExceptionHandler(new CustomExceptionHandler(
+					getExternalCacheDir().toString(), null));
+		}
+	}
 }

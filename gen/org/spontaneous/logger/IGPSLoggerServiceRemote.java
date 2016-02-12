@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: C:\\Projekte\\SpontaneousRunning\\workspaceapp\\SpontaneousRunningApp\\src\\org\\spontaneous\\logger\\IGPSLoggerServiceRemote.aidl
+ * Original file: C:\\Projekte\\SpontaneousRunning\\workspaceApp\\main\\SpontaneousRunningApp\\src\\org\\spontaneous\\logger\\IGPSLoggerServiceRemote.aidl
  */
 package org.spontaneous.logger;
 public interface IGPSLoggerServiceRemote extends android.os.IInterface

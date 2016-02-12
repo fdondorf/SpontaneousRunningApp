@@ -2,7 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="?android:attr/listPreferredItemHeight"
-    android:padding="6dip" >
+    android:padding="6dip" 
+    android:background="@android:color/white">
 
     <ImageView
         android:id="@+id/icon"
@@ -10,19 +11,18 @@
         android:layout_height="fill_parent"
         android:layout_alignParentBottom="true"
         android:layout_alignParentTop="true"
-        android:layout_marginRight="6dip"
-        android:contentDescription="TODO"
-        android:src="@drawable/ic_launcher_old" />
+        android:layout_marginEnd="6dip"
+        android:contentDescription="@string/btn_splittimes"
+        android:src="@drawable/ic_splittime" />
 
     <TextView
         android:id="@+id/firstLine_right"
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
-        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
         android:layout_alignWithParentIfMissing="true"
         android:gravity="center_vertical"
-        android:text="04:56"
         android:textAppearance="?android:attr/textAppearanceLarge" />
     
     <TextView

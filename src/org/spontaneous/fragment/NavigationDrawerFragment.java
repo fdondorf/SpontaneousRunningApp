@@ -1,7 +1,5 @@
 package org.spontaneous.fragment;
 
-import org.spontaneous.R;
-
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Fragment;
@@ -22,6 +20,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import org.spontaneous.R;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation
@@ -106,15 +106,11 @@ public class NavigationDrawerFragment extends Fragment {
 						selectItem(position);
 					}
 				});
-
-		ActionBar ab = getActionBar();
-		mDrawerListView.setAdapter(new ArrayAdapter<String>(ab
+		mDrawerListView.setAdapter(new ArrayAdapter<String>(getActionBar()
 				.getThemedContext(), android.R.layout.simple_list_item_1,
 				android.R.id.text1, new String[] {
-						getString(R.string.action_startActivity),
-						getString(R.string.action_startMapActivity),
-						getString(R.string.action_myActivities),
-						getString(R.string.action_myActivitiesREST)}));
+						getString(R.string.title_start),
+						getString(R.string.title_startMap)}));
 		mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
 		return mDrawerListView;
 	}
@@ -127,7 +123,7 @@ public class NavigationDrawerFragment extends Fragment {
 	/**
 	 * Users of this fragment must call this method to set up the navigation
 	 * drawer interactions.
-	 *
+	 * 
 	 * @param fragmentId
 	 *            The android:id of this fragment in its activity's layout.
 	 * @param drawerLayout
@@ -169,7 +165,7 @@ public class NavigationDrawerFragment extends Fragment {
 				}
 
 				getActivity().invalidateOptionsMenu(); // calls
-														// onPrepareOptionsMenu()
+																// onPrepareOptionsMenu()
 			}
 
 			@Override
@@ -191,7 +187,7 @@ public class NavigationDrawerFragment extends Fragment {
 				}
 
 				getActivity().invalidateOptionsMenu(); // calls
-														// onPrepareOptionsMenu()
+																// onPrepareOptionsMenu()
 			}
 		};
 
@@ -276,8 +272,8 @@ public class NavigationDrawerFragment extends Fragment {
 		}
 
 		if (item.getItemId() == R.id.action_settings) {
-			Toast.makeText(getActivity(), "Settings action.",
-					Toast.LENGTH_SHORT).show();
+			Toast.makeText(getActivity(), "Settings action.", Toast.LENGTH_SHORT)
+					.show();
 			return true;
 		}
 
@@ -292,6 +288,8 @@ public class NavigationDrawerFragment extends Fragment {
 	private void showGlobalContextActionBar() {
 		ActionBar actionBar = getActionBar();
 		actionBar.setDisplayShowTitleEnabled(true);
+		actionBar.setHomeButtonEnabled(true);
+		actionBar.setDisplayHomeAsUpEnabled(true);
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
 		actionBar.setTitle(R.string.app_name);
 	}

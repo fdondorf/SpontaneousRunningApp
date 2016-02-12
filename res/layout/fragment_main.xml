@@ -11,7 +11,7 @@
     android:background="@color/grey">
     
     <!-- GPS Signal -->
-    <include layout="@layout/comp_gps_signal" />
+    <include layout="@layout/comp_gps_signal_old" />
 	<include layout="@layout/comp_separatorline" />
 	
    	<!-- Activity Type -->

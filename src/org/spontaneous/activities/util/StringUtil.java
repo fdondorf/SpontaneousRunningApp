@@ -22,6 +22,17 @@ public class StringUtil {
     	distanceInKm = distanceInKm.setScale(ROUND_2, BigDecimal.ROUND_HALF_UP);
         return distanceInKm + KILOMETER;
     }
+
+	/**
+	 * Returns the given distance in meters as a String of type kilometers.
+	 * @param distance Distance in meters (m)
+	 * @return Distance-String in kilometers (km) withot unit (Example: 7,24)
+	 */
+    public static String getDistanceStringWithoutUnit(Float distance) {
+    	BigDecimal distanceInKm = new BigDecimal(distance/KM_IN_METERS);
+    	distanceInKm = distanceInKm.setScale(ROUND_2, BigDecimal.ROUND_HALF_UP);
+        return String.valueOf(distanceInKm);
+    }
     
     /**
      * Returns the given speed in m/s as a String of the speed in km/h.
@@ -34,6 +45,16 @@ public class StringUtil {
     	return speedInKmh + KM_PER_HOUR;
     }
     
+    /**
+     * Returns the given speed in m/s as a String of the speed in km/h.
+     * @param speed Speed in m/s
+     * @return String of speed in km/h without unit (Example: 8,56)
+     */
+    public static String getSpeedStringWithoutUnit(Float speed) {
+    	BigDecimal speedInKmh = new BigDecimal(speed * HOUR_IN_SECONDS / KM_IN_METERS); // Compute km/h from m/s
+    	speedInKmh = speedInKmh.setScale(ROUND_2, BigDecimal.ROUND_HALF_UP);
+    	return String.valueOf(speedInKmh);
+    }
     public static String getMinutesPerKmString(Float speed) {
     	BigDecimal speedBd = new BigDecimal(speed);
     	speedBd.setScale(ROUND_2, BigDecimal.ROUND_HALF_UP);

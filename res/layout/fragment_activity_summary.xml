@@ -1,14 +1,25 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="org.spontaneous.ActivitySummaryActivity$PlaceholderFragment" >
+    tools:context="org.spontaneous.activities.MainActivity$PlaceholderFragment"
+    android:id="@+id/layout_fragment_activity_summary"
+    android:orientation="vertical">
 
-    <!-- Map View -->
-    <include layout="@layout/comp_mapview" />
-
-    <!-- Comments View -->
-    
-    <!-- Button Save View -->
-
-</RelativeLayout>
+	<include android:id="@+id/tool_bar_layout" layout="@layout/tool_bar" />
+	
+	<RelativeLayout 
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    tools:context="org.spontaneous.activities.ActivitySummaryActivity" >
+		
+	    <!-- Map View -->
+	    <include layout="@layout/comp_mapview" />
+	
+	    <!-- Comments View -->
+	    
+	    <!-- Button Save View -->
+	
+	</RelativeLayout>
+</LinearLayout>

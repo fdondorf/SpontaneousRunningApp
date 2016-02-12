@@ -35,7 +35,7 @@ public class MyActivitiesRESTFragment extends ListFragment {
 
 	private static final int RESULT_DELETED = 3;
 
-	private ITrackingService trackingService = TrackingServiceRESTImpl.getInstance(this.getActivity());
+	private ITrackingService trackingService;
 
 	/**
 	 * The fragment argument representing the section number for this
@@ -66,6 +66,7 @@ public class MyActivitiesRESTFragment extends ListFragment {
 
 	       setHasOptionsMenu(true);
 
+	       trackingService = TrackingServiceRESTImpl.getInstance(this.getActivity());
 	       getMyActivitiesList();
 
 	       return rootView;
@@ -80,41 +81,6 @@ public class MyActivitiesRESTFragment extends ListFragment {
 	    CustomArrayAdapter adapter = new CustomArrayAdapter(getActivity(), mTracks);
 	    setListAdapter(adapter);
 	}
-
-//	private List<TrackModel> getTrackData(Cursor mTracksCursor) {
-//
-//		//List<TrackModel> tracks = trackingService.getAllTracks();
-//
-//		List<TrackModel> tracks = new ArrayList<TrackModel>();
-//		if (mTracksCursor != null) {
-//			TrackModel trackModel = null;
-//			while (mTracksCursor.moveToNext()) {
-//
-//				// TODO: Quickfix wieder entfernen
-//				Long totalDuration = 0L;
-//				String value = null;
-//				if (mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DURATION)) != null) {
-//					try {
-//						totalDuration = Long.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DURATION)));
-//						Log.i(TAG, value);
-//					} catch (Exception exc) {
-//						value = String.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DURATION)));
-//					}
-//				}
-//
-//				trackModel = new TrackModel(
-//						mTracksCursor.getLong(mTracksCursor.getColumnIndex(Tracks._ID)),
-//						mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.NAME)),
-//						Float.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DISTANCE))),
-//						totalDuration,
-//						//Long.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DURATION))),
-//						Long.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.CREATION_TIME))));
-//				tracks.add(trackModel);
-//			}
-//		}
-//
-//		return tracks;
-//	}
 
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {

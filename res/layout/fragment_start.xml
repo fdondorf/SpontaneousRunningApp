@@ -21,6 +21,9 @@
 	    android:layout_marginRight="@dimen/activity_vertical_margin"
     	android:layout_gravity="bottom" >
 
+	    <!-- Current User -->
+	    <!-- <include layout="@layout/comp_currentuser" /> -->
+
 	    <!-- GPS Signal Quality -->
 	    <include layout="@layout/comp_gps_signal" />
 
@@ -40,7 +43,10 @@
 		        android:textColorLink="@color/lightorange"
 		        android:textAppearance="?android:attr/textAppearanceLarge"
 		        android:textColor="@color/white"
-		        style="@style/CustomButton.Blue.Gradient"/>
+		        android:background="@drawable/shape_border_round_blue" />
+		        
+				<!-- android:background="@color/ColorPrimary" />
+		        style="@style/CustomButton.Blue.Gradient"/> -->
 		</LinearLayout>
 	</RelativeLayout>
 </FrameLayout>

@@ -26,7 +26,7 @@ interface IRemoteService {
 
     void pauseLogging();
 
-    long resumeLogging();
+    long resumeLogging(in long trackId);
 
 	void stopLogging();
 }

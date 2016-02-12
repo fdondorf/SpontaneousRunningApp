@@ -8,27 +8,36 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.spontaneous.R;
+import org.spontaneous.activities.adapter.SplitTimeArrayAdapter;
 import org.spontaneous.activities.model.GeoPointModel;
 import org.spontaneous.activities.model.SegmentModel;
+import org.spontaneous.activities.model.SplitTimeModel;
 import org.spontaneous.activities.model.TimeModel;
 import org.spontaneous.activities.model.TrackModel;
+import org.spontaneous.activities.util.CustomExceptionHandler;
 import org.spontaneous.activities.util.DateUtil;
 import org.spontaneous.activities.util.StringUtil;
 import org.spontaneous.core.ITrackingService;
+import org.spontaneous.core.TrackingUtil;
 import org.spontaneous.core.impl.TrackingServiceImpl;
-import org.spontaneous.db.GPSTracking.Segments;
-import org.spontaneous.db.GPSTracking.SegmentsColumns;
 import org.spontaneous.db.GPSTracking.Tracks;
-import org.spontaneous.db.GPSTracking.Waypoints;
-import org.spontaneous.db.GPSTracking.WaypointsColumns;
 import org.spontaneous.trackservice.util.TrackingServiceConstants;
+import org.spontaneous.utility.Constants;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -36,36 +45,29 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.BaseColumns;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.Window;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
-
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
+import android.widget.Toolbar;
+import android.widget.ViewFlipper;
 
 public class ActivitySummaryActivity extends Activity {
 
   private static final String TAG = "ActivitySummaryActivity";
 
-  private static final int RESULT_OK = 4;
   private static final int RESULT_ACTIVITY_SAVED = 1;
   private static final int RESULT_ACTIVITY_RESUMED = 2;
   private static final int RESULT_DELETED = 3;
-
+  private static final int RESULT_OK = 4;
+  
   private int mRequestCode = 0;
-
-  private static final Float KILOMETER = 1000f;
+  private int REQUESTCODE_VALUE_MYACTIVITIES = 1;
 
   private ITrackingService trackingService = TrackingServiceImpl.getInstance(this);
 
@@ -80,36 +82,81 @@ public class ActivitySummaryActivity extends Activity {
   private TextView mAverageSpeedView;
   private Button mSplitTimesBtn;
   private Button mSaveActivityBtn;
-
+  private ViewFlipper viewFlipper;
+  
+  private ListView listView;
+  
+  private Toolbar toolbar;
+  
+  private float lastX;
+  
   @Override
   protected void onCreate(Bundle savedInstanceState) {
 	  super.onCreate(savedInstanceState);
 
-	  setContentView(R.layout.fragment_activity_summary);
+	  requestWindowFeature(Window.FEATURE_ACTION_BAR);
 
-	  // Get track from db
+	  //setContentView(R.layout.fragment_activity_summary);
+	  setContentView(R.layout.layout_activity_summary);
+	  
+	  registerExceptionHandler();
+	   
+	  // Toolbar		
+	  toolbar = (Toolbar) findViewById(R.id.tool_bar);
+	  toolbar.setTitle(R.string.title_activity_activity_summary);
+	  toolbar.inflateMenu(R.menu.activity_summary);
+	  toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
+	  
+      toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+              onBackPressed();
+          }
+      });
+      
+      toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+          @Override
+          public boolean onMenuItemClick(MenuItem menuItem) {
+
+              switch (menuItem.getItemId()){
+                  case R.id.action_delete_activity:
+                	  createDeletionDialog();
+                	  return true;
+              }
+              return false;
+          }
+      });
+		    
+	  ActionBar ab = getActionBar();
+	  if (ab != null) {
+		  ab.setHomeButtonEnabled(true);
+	  }
+	  
 	  Bundle data = getIntent().getExtras();
+	  
+	  // Get track from db
 	  mRequestCode = data.getInt(TrackingServiceConstants.REQUEST_CODE);
-
-	  mTrackModel = trackingService.readTrackById(data.getLong(TrackingServiceConstants.TRACK_ID)); //readTrackById(data.getLong(TrackingServiceConstants.TRACK_ID));
+	  mTrackModel = trackingService.readTrackById(data.getLong(TrackingServiceConstants.TRACK_ID));
 
 	  // Get the geopoint for the track from db
-	  geoPoints = readGeoPointsForTrack(data.getLong(TrackingServiceConstants.TRACK_ID));
+	  geoPoints = trackingService.getGeoPointsByTrack(data.getLong(TrackingServiceConstants.TRACK_ID));
 
+	  viewFlipper = (ViewFlipper) findViewById(R.id.viewflipper);
+	  
 	  // Initialize GUI-Components
 	  map = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
 	        .getMap();
-	  mDurationView = (TextView) findViewById(R.id.view_stats_duration);
+	  mDurationView = (TextView) findViewById(R.id.timeText);
 	  mDurationView.setText("00:00");
-	  mDistanceView = (TextView) findViewById(R.id.view_stats_distance);
-	  mCaloriesView = (TextView) findViewById(R.id.view_stats_calories);
+	  mDistanceView = (TextView) findViewById(R.id.distanceText);
+	  mCaloriesView = (TextView) findViewById(R.id.caloriesValue);
 	  mCaloriesView.setText("0");
-	  mAverageSpeedView = (TextView) findViewById(R.id.view_stats_average);
+	  mAverageSpeedView = (TextView) findViewById(R.id.currentAveragePerUnit);
 	  mAverageSpeedView.setText(StringUtil.getSpeedString(0F));
 
-	  mSplitTimesBtn = (Button) findViewById(R.id.btn_splittimes);
-	  mSplitTimesBtn.setOnClickListener(mSplitTimesBtnListener);
-
+	  //mSplitTimesBtn = (Button) findViewById(R.id.btn_splittimes);
+	  //mSplitTimesBtn.setOnClickListener(mSplitTimesBtnListener);
+	  
 	  mSaveActivityBtn = (Button) findViewById(R.id.btn_saveActivity);
 	  mSaveActivityBtn.setOnClickListener(mSaveActivityBtnListener);
 
@@ -121,7 +168,13 @@ public class ActivitySummaryActivity extends Activity {
 		  TimeModel timeModel = computeTotalDuration(mTrackModel);
 		  mAverageSpeedView.setText(DateUtil.millisToShortDHMS(computeAverageTimePerKilometer(timeModel.getTotalDuration(), mTrackModel.getTotalDistance())));
 		  mDurationView.setText(DateUtil.millisToShortDHMS(timeModel.getTotalDuration()));
-
+		  mCaloriesView.setText(String.valueOf(
+				  TrackingUtil.computeCalories(70, mTrackModel.getTotalDistance())));
+		  
+		  List<SplitTimeModel> splitTimes = TrackingUtil.computeAverageSpeedPerUnit(mTrackModel, geoPoints, Constants.KILOMETER);
+		  listView = (ListView) findViewById(R.id.splitTimes);
+		  listView.setAdapter(new SplitTimeArrayAdapter(this, splitTimes));
+		  
 		  if (!geoPoints.isEmpty()) {
 
 			  // Draw line on map and add visual components like markers ...
@@ -132,6 +185,10 @@ public class ActivitySummaryActivity extends Activity {
 			  }
 			  map.moveCamera(CameraUpdateFactory.newLatLngZoom(start, 15));
 		  }
+	  }
+	  
+	  if (mRequestCode == REQUESTCODE_VALUE_MYACTIVITIES) {
+		  mSaveActivityBtn.setVisibility(View.INVISIBLE);
 	  }
   }
 
@@ -150,32 +207,6 @@ public class ActivitySummaryActivity extends Activity {
 
 	  timeModel.setTotalDuration(totalDurationInMillis);
 	  return timeModel;
-  }
-
-  private Long computeTotalDuration(List<GeoPointModel> geoPoints) {
-
-	  // Create data structure geoPoints by segments
-	  Map<Long, List<GeoPointModel>> geoPointsBySegments = createDataStructure(geoPoints);
-
-	  // Compute duration
-	  Long totalDurationInMillis = 0L;
-	  Long timeCurrentGeoPoint = null;
-	  Long timePreviousGeoPoint = null;
-
-	  for (Entry<Long, List<GeoPointModel>> entry : geoPointsBySegments.entrySet()) {
-
-		  for (GeoPointModel geoPoint : entry.getValue()) {
-			  timeCurrentGeoPoint = geoPoint.getTime();
-			  if (timePreviousGeoPoint != null) {
-				  totalDurationInMillis += timeCurrentGeoPoint - timePreviousGeoPoint;
-			  }
-			  timePreviousGeoPoint = timeCurrentGeoPoint;
-		  }
-		  timeCurrentGeoPoint = null;
-		  timePreviousGeoPoint = null;
-	  }
-
-	  return totalDurationInMillis;
   }
 
   private Map<Long, List<GeoPointModel>> createDataStructure(List<GeoPointModel> geoPoints) {
@@ -216,115 +247,10 @@ public class ActivitySummaryActivity extends Activity {
 	  if (totalDistance == null || totalDistance <= 0F) {
 		  return 0L;
 	  }
-	  Float totalDistInKm = totalDistance / KILOMETER;
+	  Float totalDistInKm = totalDistance / Constants.KILOMETER;
 
 	  BigDecimal averageTimeInMillisPerKm = new BigDecimal(totalDuration / totalDistInKm);
 	  return averageTimeInMillisPerKm.longValue();
-  }
-
-
-  private TrackModel readTrackById(Long trackId) {
-
-	  if (trackId != null) {
-	      String[] mTrackColumns = {
-	    		Tracks._ID,
-	   		   	Tracks.NAME,
-	   		   	Tracks.TOTAL_DISTANCE,
-	   		   	Tracks.TOTAL_DURATION,
-	   		   	Tracks.CREATION_TIME
-	      };
-
-	      // Read track
-	      Uri trackReadUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(trackId));
-	      Cursor mCursor = this.getContentResolver().query(trackReadUri, mTrackColumns, null, null, Tracks.CREATION_TIME);
-	      if (mCursor != null && mCursor.moveToNext()) {
-
-	    	// TODO: Quickfix wieder entfernen
-				Long totalDuration = 0L;
-				String value = null;
-				if (mCursor.getString(mCursor.getColumnIndex(Tracks.TOTAL_DURATION)) != null) {
-					try {
-						totalDuration = Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.TOTAL_DURATION)));
-					} catch (Exception exc) {
-						value = String.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.TOTAL_DURATION)));
-						Log.i(TAG, "TotalDuration:" + value);
-					}
-				}
-
-
-		      TrackModel trackModel = new TrackModel(
-		    		Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks._ID))),
-		    		mCursor.getString(mCursor.getColumnIndex(Tracks.NAME)),
-					Float.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.TOTAL_DISTANCE))),
-					totalDuration,
-					//Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.TOTAL_DURATION))),
-					Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.CREATION_TIME)))
-					);
-
-		      // Read Segments and wayPoints
-		      String[] mSegmentsColumns = {
-		    		  BaseColumns._ID,
-			   		  SegmentsColumns.TRACK,
-			   		  SegmentsColumns.START_TIME,
-			   		  SegmentsColumns.END_TIME
-			      };
-		      Uri segmentReadUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(trackId) + "/segments/");
-		      Cursor mSegmentsCursor = this.getContentResolver().query(segmentReadUri, mSegmentsColumns, null, null, Segments._ID);
-
-		      if (mSegmentsCursor != null) {
-			      SegmentModel segmentModel = null;
-			      while (mSegmentsCursor.moveToNext()) {
-			    	  segmentModel = new SegmentModel();
-			    	  segmentModel.setId(Long.valueOf(mSegmentsCursor.getString(mSegmentsCursor.getColumnIndex(Segments._ID))));
-			    	  segmentModel.setTrackId(Long.valueOf(mSegmentsCursor.getString(mSegmentsCursor.getColumnIndex(Segments.TRACK))));
-			    	  segmentModel.setStartTimeInMillis(mSegmentsCursor.getLong(mSegmentsCursor.getColumnIndex(Segments.START_TIME)));
-			    	  segmentModel.setEndTimeInMillis(mSegmentsCursor.getLong(mSegmentsCursor.getColumnIndex(Segments.END_TIME)));
-			    	  trackModel.addSegment(segmentModel);
-			      }
-		      }
-		      return trackModel;
-	      }
-	  }
-	  return null;
-  }
-
-  private List<GeoPointModel> readGeoPointsForTrack(Long trackId) {
-
-	  List<GeoPointModel> geoPoints = new ArrayList<GeoPointModel>();
-	  if (trackId != null) {
-		  String[] mWayPointColumns = {
-				"waypoints."+BaseColumns._ID,
-				WaypointsColumns.LATITUDE,
-	   		   	WaypointsColumns.LONGITUDE,
-	   		   	WaypointsColumns.TIME,
-	   		   	WaypointsColumns.SPEED,
-	   		   	WaypointsColumns.ACCURACY,
-	   		   	WaypointsColumns.ALTITUDE,
-	   		   	WaypointsColumns.BEARING,
-	   			WaypointsColumns.DISTANCE,
-	   		   	WaypointsColumns.SEGMENT
-	      };
-
-	      // Read track
-	      Uri wayPointsReadUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(trackId) + "/waypoints/");
-	      Cursor mCursor = this.getContentResolver().query(wayPointsReadUri, mWayPointColumns, null, null, "waypoints."+Waypoints._ID);
-	      while (mCursor.moveToNext()) {
-	    	  GeoPointModel geoPointModel = new GeoPointModel();
-	    	  geoPointModel.setId(Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Waypoints._ID))));
-	    	  geoPointModel.setLatitude(mCursor.getDouble(mCursor.getColumnIndex(Waypoints.LATITUDE)));
-	    	  geoPointModel.setLongitude(mCursor.getDouble(mCursor.getColumnIndex(Waypoints.LONGITUDE)));
-	    	  geoPointModel.setTime(mCursor.getLong(mCursor.getColumnIndex(Waypoints.TIME)));
-	    	  geoPointModel.setSpeed(mCursor.getDouble(mCursor.getColumnIndex(Waypoints.SPEED)));
-	    	  geoPointModel.setAccurracy(mCursor.getDouble(mCursor.getColumnIndex(Waypoints.ACCURACY)));
-	    	  geoPointModel.setAltitude(mCursor.getDouble(mCursor.getColumnIndex(Waypoints.ALTITUDE)));
-	    	  geoPointModel.setBearing(mCursor.getDouble(mCursor.getColumnIndex(Waypoints.BEARING)));
-	    	  geoPointModel.setDistance(mCursor.getDouble(mCursor.getColumnIndex(Waypoints.DISTANCE)));
-	    	  geoPointModel.setSegmentId(Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Waypoints.SEGMENT))));
-
-	    	  geoPoints.add(geoPointModel);
-	      }
-	  }
-	  return geoPoints;
   }
 
   private List<PolylineOptions> drawPolyLine(List<GeoPointModel> geoPoints) {
@@ -332,7 +258,7 @@ public class ActivitySummaryActivity extends Activity {
 	  // Create data structure geoPoints by segments
 	  Map<Long, List<GeoPointModel>> geoPointsBySegments = createDataStructure(geoPoints);
 
-	  float kmMarker = KILOMETER;
+	  float kmMarker = Constants.KILOMETER;
 	  int km = 1;
 	  List<PolylineOptions> polyLineOptions = new ArrayList<PolylineOptions>();
 	  boolean startOfFirstSegment = true;
@@ -364,10 +290,7 @@ public class ActivitySummaryActivity extends Activity {
 				  if (totalDistancePrevPoint <= kmMarker && totalDistanceCurrentPoint >= kmMarker) {
 
 					  createKmMarker(latLngPoint, km);
-//					  map.addMarker(new MarkerOptions().position(latLngPoint)
-//		     			        .title("Km " + kmMarker)
-//		     			        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
-					  kmMarker += KILOMETER;
+					  kmMarker += Constants.KILOMETER;
 					  km++;
 				  }
 				  option.add(latLngPoint);
@@ -405,7 +328,7 @@ public class ActivitySummaryActivity extends Activity {
   		canvas.drawText(km + " km", 3, 20, color);
   		MarkerOptions options = new MarkerOptions().position(position).
   				icon(BitmapDescriptorFactory.fromBitmap(bitmap)).anchor(0.5f, 1);
-  		Marker newMarker = map.addMarker(options);
+  		map.addMarker(options);
   	}
 
   	/****************************************
@@ -442,8 +365,9 @@ public class ActivitySummaryActivity extends Activity {
 	private void updateTrack(String name) {
 
 		ContentValues content = new ContentValues();
-		content.put(Tracks.NAME, name);
+		content.put(Tracks.NAME, mTrackModel.getName());
 		content.put(Tracks.TOTAL_DISTANCE, mTrackModel.getTotalDistance());
+		content.put(Tracks.TOTAL_DURATION, mTrackModel.getTotalDuration());
 
 		Uri trackUpdateUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(mTrackModel.getId()));
 		getContentResolver().update(trackUpdateUri, content, null, null);
@@ -462,6 +386,74 @@ public class ActivitySummaryActivity extends Activity {
   		return true;
   	}
 
+  	private void createDeletionDialog() {
+  		new AlertDialog.Builder(this)
+	    .setTitle(R.string.standardWarningHdr)
+	    .setMessage(R.string.deleteActivityRequest)
+	    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+	        public void onClick(DialogInterface dialog, int whichButton) {
+	        	dialog.cancel();
+	        }
+	    })
+	    .setPositiveButton(R.string.confirm, new DialogInterface.OnClickListener() {
+	        public void onClick(DialogInterface dialog, int whichButton) {
+	        	boolean result = deleteActivity(mTrackModel.getId());
+				if (result) {
+					startMainActivity();
+				}
+	        }
+	    })
+	    .create().show();
+  	}
+  	
+  	 public boolean onTouchEvent(MotionEvent touchevent) {
+  		 
+  		 switch (touchevent.getAction()) {
+
+  	  		case MotionEvent.ACTION_DOWN: 
+  	            lastX = touchevent.getX();
+  	            break;
+  
+  	        case MotionEvent.ACTION_UP: 
+  	            float currentX = touchevent.getX();
+
+  	            // Handling left to right screen swap.
+            if (lastX < currentX) {
+            	
+                // If there aren't any other children, just break.
+                if (viewFlipper.getDisplayedChild() == 0)
+                    break;
+
+                // Next screen comes in from left.
+                viewFlipper.setInAnimation(this, R.anim.slide_in_from_left);
+
+                // Current screen goes out from right. 
+  	                viewFlipper.setOutAnimation(this, R.anim.slide_out_to_right);
+  
+  	                // Display next screen.
+                viewFlipper.showNext();
+            }
+            // Handling right to left screen swap.
+             if (lastX > currentX) {
+            	 
+                 // If there is a child (to the left), kust break.
+                 if (viewFlipper.getDisplayedChild() == 1)
+                     break;
+
+                 // Next screen comes in from right.
+                 viewFlipper.setInAnimation(this, R.anim.slide_in_from_right);
+
+                // Current screen goes out from left. 
+                 viewFlipper.setOutAnimation(this, R.anim.slide_out_to_left);
+
+                // Display previous screen.
+                 viewFlipper.showPrevious();
+             }
+             break;
+        }
+         return false;
+    }
+  	 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		boolean result = super.onOptionsItemSelected(item);
@@ -496,12 +488,6 @@ public class ActivitySummaryActivity extends Activity {
 		return result;
 	}
 
-	@Override
-	protected void onNewIntent(Intent intent) {
-		// TODO Auto-generated method stub
-		super.onNewIntent(intent);
-	}
-
 	private void startMainActivity() {
 		Intent intent = new Intent();
     	intent.setClass(this, MainActivity.class);
@@ -521,4 +507,11 @@ public class ActivitySummaryActivity extends Activity {
 	    return false;
 	}
 
+	private void registerExceptionHandler() {
+		if(!(Thread.getDefaultUncaughtExceptionHandler() instanceof CustomExceptionHandler)) {
+			Thread.setDefaultUncaughtExceptionHandler(new CustomExceptionHandler(
+					getExternalCacheDir().toString(), null));
+		}
+	}
+	
 }

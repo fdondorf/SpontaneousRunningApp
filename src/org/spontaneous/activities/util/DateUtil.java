@@ -33,22 +33,27 @@ public class DateUtil {
 	   * Converts time (in milliseconds) to human-readable format
 	   *  "<dd:>hh:mm:ss"
 	   */
-	public static String millisToShortDHMS(long duration) {
-		String res = "";
-	    duration /= ONE_SECOND;
-	    int seconds = (int) (duration % SECONDS);
-	    duration /= SECONDS;
-	    int minutes = (int) (duration % MINUTES);
-	    duration /= MINUTES;
-	    int hours = (int) (duration % HOURS);
-	    int days = (int) (duration / HOURS);
-	    if (days == 0 && hours == 0) {
-	    	res = String.format("%02d:%02d", minutes, seconds);
-	    } else if (days == 0) {
-	    	res = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-	    } else {
-	      res = String.format("%dd%02d:%02d:%02d", days, hours, minutes, seconds);
-	    }
-	    return res;
-	  }
+	public static String millisToShortDHMS(Long duration) {
+		
+		if (duration != null) {
+			String res = "";
+		    duration /= ONE_SECOND;
+		    int seconds = (int) (duration % SECONDS);
+		    duration /= SECONDS;
+		    int minutes = (int) (duration % MINUTES);
+		    duration /= MINUTES;
+		    int hours = (int) (duration % HOURS);
+		    int days = (int) (duration / HOURS);
+		    if (days == 0 && hours == 0) {
+		    	res = String.format("%02d:%02d", minutes, seconds);
+		    } else if (days == 0) {
+		    	res = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+		    } else {
+		      res = String.format("%dd%02d:%02d:%02d", days, hours, minutes, seconds);
+		    }
+		    return res;
+		}
+		
+		return "00:00";
+	}
 }

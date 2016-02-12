@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: C:\\Projekte\\SpontaneousRunning\\workspaceapp\\SpontaneousRunningApp\\src\\org\\spontaneous\\trackservice\\IRemoteServiceCallback.aidl
+ * Original file: C:\\Projekte\\SpontaneousRunning\\workspaceApp\\main\\SpontaneousRunningApp\\src\\org\\spontaneous\\trackservice\\IRemoteServiceCallback.aidl
  */
 package org.spontaneous.trackservice;
 /**

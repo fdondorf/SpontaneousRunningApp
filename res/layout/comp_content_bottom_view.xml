@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/distance_speed_box"
+    android:layout_width="fill_parent"
+	android:layout_height="wrap_content">
+    
+    <View android:id="@+id/strut"
+        android:layout_width="0dp"
+        android:layout_height="0dp" 
+        android:layout_centerHorizontal="true"/>
+    
+    <!-- Left box view-->
+   	<RelativeLayout
+        android:id="@+id/leftView"
+        android:layout_width="fill_parent"
+        android:height="100dp"
+        android:layout_height="100dp"
+        android:layout_toStartOf="@id/strut"
+        android:layout_toLeftOf="@id/strut"
+        android:layout_margin="5dp"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:gravity="center_horizontal">
+	           
+        <TextView android:layout_width="fill_parent"
+            android:id="@+id/distanceLabel"
+            android:layout_alignParentTop="true"
+            android:text="@string/distance"
+            android:textColor="#888888"
+            android:layout_centerVertical="true"
+            android:layout_height="30dp"
+            android:paddingTop="10dp"
+            android:textSize="8pt"
+            android:height="30dp"
+           	android:gravity="center_horizontal|center_vertical"	
+            android:layout_centerHorizontal="true" />
+        
+        <TextView android:layout_width="fill_parent"
+            android:id="@+id/distanceText"
+            android:layout_height="40dp"
+           	android:textSize="16pt"
+            android:textColor="#000000"
+            android:gravity="center_horizontal"	
+            android:layout_centerHorizontal="true" 
+            android:layout_below="@id/distanceLabel"/>
+     	
+     	<TextView android:layout_width="fill_parent"
+            android:id="@+id/distanceUnit"
+            android:layout_height="30dp"
+           	android:textSize="8pt"
+            android:textColor="#888888"
+            android:text="@string/unit_km"
+            android:gravity="center_horizontal"	
+            android:layout_centerHorizontal="true" 
+            android:layout_below="@id/distanceText"/>
+	     	
+     	</RelativeLayout>
+     	
+   	<!-- Left box view-->
+   	<RelativeLayout
+        android:id="@+id/rightView"
+        android:layout_width="fill_parent"
+        android:height="100dp"
+        android:layout_height="100dp"
+        android:layout_toEndOf="@id/strut"
+        android:layout_toRightOf="@id/strut"
+        android:layout_margin="5dp"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:gravity="center_horizontal">
+	           
+        <TextView android:layout_width="fill_parent"
+            android:id="@+id/speedLabel"
+            android:layout_alignParentTop="true"
+            android:text="@string/title_speed"
+            android:textColor="#888888"
+            android:layout_centerVertical="true"
+            android:layout_height="30dp"
+            android:paddingTop="10dp"
+            android:textSize="8pt"
+            android:height="30dp"
+           	android:gravity="center_horizontal|center_vertical"	
+            android:layout_centerHorizontal="true" />
+        
+        <TextView android:layout_width="fill_parent"
+            android:id="@+id/speedText"
+            android:layout_height="40dp"
+           	android:textSize="16pt"
+            android:textColor="#000000"
+            android:gravity="center_horizontal"	
+            android:layout_centerHorizontal="true" 
+            android:layout_below="@id/speedLabel"/>
+     	
+     	<TextView android:layout_width="fill_parent"
+            android:id="@+id/speedUnit"
+            android:layout_height="30dp"
+           	android:textSize="8pt"
+            android:textColor="#888888"
+            android:text="@string/title_speedPerHour"
+            android:gravity="center_horizontal"	
+            android:layout_centerHorizontal="true" 
+            android:layout_below="@id/speedText"/>
+	     	
+     	</RelativeLayout>
+
+</RelativeLayout>

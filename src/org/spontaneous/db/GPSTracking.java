@@ -23,7 +23,7 @@ public final class GPSTracking
    static final String DATABASE_NAME = "SPONTANEOUS_RUNNING.db";
    
    /** The version of the database schema */
-   static final int DATABASE_VERSION = 5;
+   static final int DATABASE_VERSION = 2;
 
    /**
     * This table contains tracks.
@@ -49,16 +49,18 @@ public final class GPSTracking
         		 + " " + Tracks.NAME + " " + Tracks.NAME_TYPE + "," 
         		 + " " + Tracks.TOTAL_DISTANCE + " " + Tracks.TOTAL_DISTANCE_TYPE + "," 
         		 + " " + Tracks.TOTAL_DURATION + " " + Tracks.TOTAL_DURATION_TYPE + "," 
-        		 + " " + Tracks.CREATION_TIME + " " + Tracks.CREATION_TIME_TYPE 
+        		 + " " + Tracks.CREATION_TIME + " " + Tracks.CREATION_TIME_TYPE + ","
+        		 + " " + Tracks.USER_ID + " " + Tracks.USER_ID_TYPE
         		 + ");";
+      
       static final String[] UPGRADE_STATEMENT_1_TO_2 = {
-          "ALTER TABLE " + Tracks.TABLE + " ADD COLUMN " + TracksColumns.TOTAL_DISTANCE + " " + TracksColumns.TOTAL_DISTANCE_TYPE +";",
-          "UPDATE TABLE " + Tracks.TABLE + " SET " + TracksColumns.TOTAL_DISTANCE + "= 0;"
+          "ALTER TABLE " + Tracks.TABLE + " ADD COLUMN " + TracksColumns.USER_ID + " " + TracksColumns.USER_ID_TYPE +" DEFAULT 1;"//,
+          //"UPDATE TABLE " + Tracks.TABLE + " SET " + TracksColumns.USER_ID + "= 1;"
       };
-      static final String[] UPGRADE_STATEMENT_4_TO_5 = {
-          "ALTER TABLE " + Tracks.TABLE + " ADD COLUMN " + TracksColumns.TOTAL_DURATION + " " + TracksColumns.TOTAL_DURATION_TYPE +";",
-          "UPDATE TABLE " + Tracks.TABLE + " SET " + TracksColumns.TOTAL_DURATION + " = 0;"
-      };
+//      static final String[] UPGRADE_STATEMENT_4_TO_5 = {
+//          "ALTER TABLE " + Tracks.TABLE + " ADD COLUMN " + TracksColumns.TOTAL_DURATION + " " + TracksColumns.TOTAL_DURATION_TYPE +";",
+//          "UPDATE TABLE " + Tracks.TABLE + " SET " + TracksColumns.TOTAL_DURATION + " = 0;"
+//      };
    }
    
    /**
@@ -66,14 +68,16 @@ public final class GPSTracking
     * 
     * @author fdondorf
     */
-   public static final class Segments extends SegmentsColumns implements android.provider.BaseColumns
-   {
+   public static final class Segments extends SegmentsColumns implements android.provider.BaseColumns {
 
       /** The MIME type of a CONTENT_URI subdirectory of a single segment. */
       public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.org.spontaneous.android.segment";
       
       /** The MIME type of CONTENT_URI providing a directory of segments. */
       public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.org.spontaneous.android.segment";
+
+      /** The content:// style URL for this provider, content://org.spontaneous.android.SpontaneousRunning/tracks */
+      public static final Uri CONTENT_URI = Uri.parse( "content://" + GPSTracking.AUTHORITY + "/" + Segments.TABLE );
 
       /** The name of this table, segments */
       public static final String TABLE = "segments";
@@ -84,16 +88,13 @@ public final class GPSTracking
         		 + " " + Segments.START_TIME + " " + Segments.START_TIME_TYPE  + "," 
         		 + " " + Segments.END_TIME + " " + Segments.END_TIME_TYPE 
         		 + ");";
-      static final String[] UPGRADE_STATEMENT_3_TO_4 = {
-          "ALTER TABLE " + Segments.TABLE + " ADD COLUMN " + SegmentsColumns.START_TIME + " " + SegmentsColumns.START_TIME_TYPE +";",
-          "ALTER TABLE " + Segments.TABLE + " ADD COLUMN " + SegmentsColumns.END_TIME + " " + SegmentsColumns.END_TIME_TYPE +";",
-          "UPDATE " + Segments.TABLE + " SET " + SegmentsColumns.START_TIME + " = 0 WHERE " +  SegmentsColumns.START_TIME + " IS NULL;",
-          "UPDATE " + Segments.TABLE + " SET " + SegmentsColumns.END_TIME + " = 0 WHERE " +  SegmentsColumns.END_TIME + " IS NULL;"
-       };
+//      static final String[] UPGRADE_STATEMENT_3_TO_4 = {
+//          "ALTER TABLE " + Segments.TABLE + " ADD COLUMN " + SegmentsColumns.START_TIME + " " + SegmentsColumns.START_TIME_TYPE +";",
+//          "ALTER TABLE " + Segments.TABLE + " ADD COLUMN " + SegmentsColumns.END_TIME + " " + SegmentsColumns.END_TIME_TYPE +";",
+//          "UPDATE " + Segments.TABLE + " SET " + SegmentsColumns.START_TIME + " = 0 WHERE " +  SegmentsColumns.START_TIME + " IS NULL;",
+//          "UPDATE " + Segments.TABLE + " SET " + SegmentsColumns.END_TIME + " = 0 WHERE " +  SegmentsColumns.END_TIME + " IS NULL;"
+//       };
       
-      /** The content:// style URL for this provider, content://org.spontaneous.android.SpontaneousRunning/tracks */
-      public static final Uri CONTENT_URI = Uri.parse( "content://" + GPSTracking.AUTHORITY + "/" + Segments.TABLE );
-
    }
 
    /**
@@ -101,8 +102,7 @@ public final class GPSTracking
     * 
     * @author fdondorf
     */
-   public static final class Waypoints extends WaypointsColumns implements android.provider.BaseColumns
-   {
+   public static final class Waypoints extends WaypointsColumns implements android.provider.BaseColumns {
 
       /** The MIME type of a CONTENT_URI subdirectory of a single waypoint. */
       public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.org.spontaneous.android.waypoint";
@@ -125,9 +125,9 @@ public final class GPSTracking
       "," + " " + WaypointsColumns.DISTANCE  + " " + WaypointsColumns.DISTANCE_TYPE + 
       ");";
       
-      static final String[] UPGRADE_STATEMENT_2_TO_3 = {
-            "ALTER TABLE " + Waypoints.TABLE + " ADD COLUMN " + WaypointsColumns.DISTANCE + " " + WaypointsColumns.DISTANCE_TYPE +";"
-         };
+//      static final String[] UPGRADE_STATEMENT_2_TO_3 = {
+//            "ALTER TABLE " + Waypoints.TABLE + " ADD COLUMN " + WaypointsColumns.DISTANCE + " " + WaypointsColumns.DISTANCE_TYPE +";"
+//         };
 
       /**
        * Build a waypoint Uri like:
@@ -150,6 +150,49 @@ public final class GPSTracking
          
          return builder.build();
       }
+   }
+
+   /**
+    * This table contains user information
+    * 
+    * @author fdondorf
+    */
+   public static final class User extends UserColumns implements android.provider.BaseColumns {
+
+      /** The MIME type of a CONTENT_URI subdirectory of a single user entry. */
+      public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.org.spontaneous.android.user";
+      
+      /** The MIME type of CONTENT_URI providing a directory of user entry. */
+      public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.org.spontaneous.android.user";
+      
+      /** The name of this table */
+      public static final String TABLE = "user";
+      static final String CREATE_STATEMENT = "CREATE TABLE " + User.TABLE + 
+      "(" + " " + BaseColumns._ID       + " " + UserColumns._ID_TYPE + 
+      "," + " " + UserColumns.CREATION_TIME   + " " + UserColumns.CREATION_TIME_TYPE + 
+      "," + " " + UserColumns.FIRSTNAME   + " " + UserColumns.FIRSTNAME_TYPE + 
+      "," + " " + UserColumns.LASTNAME  + " " + UserColumns.LASTNAME_TYPE + 
+      "," + " " + UserColumns.EMAIL + " " + UserColumns.EMAIL_TYPE + 
+      "," + " " + UserColumns.PASSWORD      + " " + UserColumns.PASSWORD_TYPE + 
+      "," + " " + UserColumns.STAY_LOGGED_IN      + " " + UserColumns.STAY_LOGGED_IN_TYPE + 
+      ");";
+      
+    static final String[] UPGRADE_STATEMENT_1_TO_2 = {
+    		"CREATE TABLE " + User.TABLE + 
+    			      "(" + " " + BaseColumns._ID       + " " + UserColumns._ID_TYPE + 
+    			      "," + " " + UserColumns.CREATION_TIME   + " " + UserColumns.CREATION_TIME_TYPE + 
+    			      "," + " " + UserColumns.FIRSTNAME   + " " + UserColumns.FIRSTNAME_TYPE + 
+    			      "," + " " + UserColumns.LASTNAME  + " " + UserColumns.LASTNAME_TYPE + 
+    			      "," + " " + UserColumns.EMAIL + " " + UserColumns.EMAIL_TYPE + 
+    			      "," + " " + UserColumns.PASSWORD      + " " + UserColumns.PASSWORD_TYPE + 
+    			      "," + " " + UserColumns.STAY_LOGGED_IN      + " " + UserColumns.STAY_LOGGED_IN_TYPE + 
+    			      ");",
+    		 "INSERT INTO " + User.TABLE + " VALUES (1, " + System.currentTimeMillis() + 
+    		 	", 'Florian', 'Dondorf', 'f.dondorf@googlemail.com', 'admin', 0);"
+
+    };
+      
+      public static final Uri CONTENT_URI = Uri.parse( "content://" + GPSTracking.AUTHORITY + "/" + User.TABLE );
    }
    
    /**
@@ -218,10 +261,12 @@ public final class GPSTracking
       public static final String TOTAL_DISTANCE	= "totalDistance";
       public static final String TOTAL_DURATION	= "totalDuration";
       public static final String CREATION_TIME 	= "creationtime";
+      public static final String USER_ID		= "user_id";
       static final String CREATION_TIME_TYPE   	= "INTEGER NOT NULL";
       static final String NAME_TYPE            	= "TEXT";
       static final String TOTAL_DISTANCE_TYPE	= "REAL NOT NULL";
-      static final String TOTAL_DURATION_TYPE	= "REAL";
+      static final String TOTAL_DURATION_TYPE	= "INTEGER NOT NULL";
+      static final String USER_ID_TYPE			= "INTEGER NOT NULL";
       static final String _ID_TYPE             	= "INTEGER PRIMARY KEY AUTOINCREMENT";
    }
    
@@ -277,6 +322,28 @@ public final class GPSTracking
       static final String BEARING_TYPE   = "REAL";
       static final String DISTANCE_TYPE	 = "REAL";
       static final String _ID_TYPE       = "INTEGER PRIMARY KEY AUTOINCREMENT";
+   }
+
+   /**
+    * Columns from the user table.
+    * 
+    * @author fdondorf
+    */
+   public static class UserColumns {
+	   
+      public static final String FIRSTNAME   = "firstname";     
+      static final String FIRSTNAME_TYPE     = "TEXT NOT NULL";
+      public static final String LASTNAME    = "lastname";     
+      static final String LASTNAME_TYPE      = "TEXT NOT NULL";
+      public static final String EMAIL    	 = "email";     
+      static final String EMAIL_TYPE      	 = "TEXT NOT NULL";
+      public static final String PASSWORD    = "password";     
+      static final String PASSWORD_TYPE      = "TEXT NOT NULL";
+      public static final String CREATION_TIME 	= "creationtime";
+      static final String CREATION_TIME_TYPE 	= "INTEGER NOT NULL";
+      public static final String STAY_LOGGED_IN = "stayloggedin";
+      static final String STAY_LOGGED_IN_TYPE 	= "BOOLEAN";
+      static final String _ID_TYPE        	 = "INTEGER PRIMARY KEY AUTOINCREMENT";
    }
    
    /**

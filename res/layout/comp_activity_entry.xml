@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:padding="16dp"
+    >
+ 
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/cv"
+        >
+ 
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            >
+ 
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/acitvityIcon"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:layout_marginRight="16dp"
+                android:background="@drawable/ic_activity"
+                />
+ 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/activityName"
+                android:layout_toRightOf="@+id/activityIcon"
+                android:layout_alignParentTop="true"
+                android:textSize="30sp"
+                />
+ 
+            <TextView
+        		android:id="@+id/activityDuration"
+        		android:layout_width="wrap_content"
+        		android:layout_height="wrap_content"
+        		android:layout_toRightOf="@+id/activityName"
+        		android:layout_alignParentRight="true"
+        		android:layout_alignParentTop="true"
+        		android:textAppearance="?android:attr/textAppearanceLarge" />
+    
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/activityDate"
+                android:layout_toRightOf="@+id/activityIcon"
+                android:layout_below="@+id/activityName"
+                />
+ 
+        </RelativeLayout>
+ 
+    </android.support.v7.widget.CardView>
+ 
+</LinearLayout>

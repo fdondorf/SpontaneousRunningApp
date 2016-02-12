@@ -4,39 +4,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.spontaneous.R;
-import org.spontaneous.activities.ActivitySummaryActivity;
 import org.spontaneous.activities.MainActivity;
-import org.spontaneous.activities.adapter.CustomArrayAdapter;
+import org.spontaneous.activities.adapter.RVAdapter;
 import org.spontaneous.activities.model.TrackModel;
-import org.spontaneous.core.ITrackingService;
-import org.spontaneous.core.impl.TrackingServiceImpl;
-import org.spontaneous.db.GPSTracking.Tracks;
-import org.spontaneous.db.GPSTracking.TracksColumns;
-import org.spontaneous.trackservice.util.TrackingServiceConstants;
+import org.spontaneous.activities.util.CustomExceptionHandler;
 
 import android.app.Activity;
-import android.app.ListFragment;
+import android.app.Fragment;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
-import android.provider.BaseColumns;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListView;
 
-public class MyActivitiesFragment extends ListFragment {
+public class MyActivitiesFragment extends Fragment {
 
 	private static final String TAG = "MyActivitiesFragment";
-
-	private static final int REQUEST_CODE_VALUE = 1;
-
-	private static final int RESULT_OK = 1;
-	private static final int RESULT_CANCELLED = 2;
-	private static final int RESULT_DELETED = 3;
-
-	private ITrackingService trackingService = TrackingServiceImpl.getInstance(this.getActivity());
 
 	/**
 	 * The fragment argument representing the section number for this
@@ -63,87 +49,44 @@ public class MyActivitiesFragment extends ListFragment {
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-	       View rootView = inflater.inflate(R.layout.list_layout, container, false);
-
+	       View rootView = inflater.inflate(R.layout.card_layout, container, false);
 	       setHasOptionsMenu(true);
 
-	       getMyActivitiesList();
-
+	       RecyclerView rv = (RecyclerView) rootView.findViewById(R.id.rv);
+	       rv.setHasFixedSize(true);
+	       
+	       LinearLayoutManager llm = new LinearLayoutManager(this.getActivity());
+	       rv.setLayoutManager(llm);
+	       
+	       RVAdapter adapter = new RVAdapter(getAllTracks());
+	       rv.setAdapter(adapter);
+	       
 	       return rootView;
 	}
 
-	private void getMyActivitiesList() {
-
-		// Defines a list of columns to retrieve from the Cursor and load into an output row
-	    String[] mTrackListColumns = {
-	    	   BaseColumns._ID,
-	    	   TracksColumns.NAME,
-	    	   TracksColumns.TOTAL_DISTANCE,
-	    	   TracksColumns.TOTAL_DURATION,
-	    	   TracksColumns.CREATION_TIME
-	    };
-
-		Cursor mTracksCursor = getActivity().getContentResolver().query(Tracks.CONTENT_URI, mTrackListColumns, null, null, TracksColumns.CREATION_TIME + " DESC");
-
-	    //mTracks = trackingService.getAllTracks();
-	    mTracks = getTrackData(mTracksCursor);
-	    CustomArrayAdapter adapter = new CustomArrayAdapter(getActivity(), mTracks);
-	    setListAdapter(adapter);
-	}
-
-	private List<TrackModel> getTrackData(Cursor mTracksCursor) {
-
-		//List<TrackModel> tracks = trackingService.getAllTracks();
-
+	private List<TrackModel> getAllTracks() {
 		List<TrackModel> tracks = new ArrayList<TrackModel>();
-		if (mTracksCursor != null) {
-			TrackModel trackModel = null;
-			while (mTracksCursor.moveToNext()) {
 
-				// TODO: Quickfix wieder entfernen
-				Long totalDuration = 0L;
-				String value = null;
-				if (mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DURATION)) != null) {
-					try {
-						totalDuration = Long.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DURATION)));
-						Log.i(TAG, value);
-					} catch (Exception exc) {
-						value = String.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DURATION)));
-					}
-				}
-
-				trackModel = new TrackModel(
-						mTracksCursor.getLong(mTracksCursor.getColumnIndex(Tracks._ID)),
-						mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.NAME)),
-						Float.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DISTANCE))),
-						totalDuration,
-						//Long.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.TOTAL_DURATION))),
-						Long.valueOf(mTracksCursor.getString(mTracksCursor.getColumnIndex(Tracks.CREATION_TIME))));
-				tracks.add(trackModel);
-			}
+		TrackModel trackModel = null;
+		for (int i = 0; i < 10; i++) {
+			 trackModel = new TrackModel(
+					 Long.valueOf(i),
+					 "Test_" + i,
+					 3000f,
+					 1000000L,
+					 Long.valueOf(System.currentTimeMillis()),
+					 1);
+			 tracks.add(trackModel);
+			 Log.i(TAG, "Created track entry No. " + i);
 		}
-
+        
 		return tracks;
 	}
-
+	
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
 
-		if (resultCode == RESULT_DELETED) {
-			getMyActivitiesList();
-		}
-	}
-
-	@Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
-		super.onListItemClick(l, v, position, id);
-
-		Intent intent = new Intent();
-    	intent.setClass(getActivity(), ActivitySummaryActivity.class);
-    	intent.putExtra(TrackingServiceConstants.TRACK_ID, mTracks.get(position).getId());
-    	intent.putExtra(TrackingServiceConstants.REQUEST_CODE, REQUEST_CODE_VALUE);
-    	startActivityForResult(intent, REQUEST_CODE_VALUE);
 	}
 
 	@Override

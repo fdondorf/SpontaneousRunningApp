@@ -25,12 +25,17 @@ import java.util.Vector;
 import org.spontaneous.R;
 import org.spontaneous.activities.CurrentActivityActivity;
 import org.spontaneous.activities.model.GeoPoint;
+import org.spontaneous.activities.model.SegmentModel;
 import org.spontaneous.activities.model.TrackModel;
+import org.spontaneous.activities.util.CustomExceptionHandler;
+import org.spontaneous.core.TrackingUtil;
+import org.spontaneous.db.GPSTracking.Segments;
 import org.spontaneous.db.GPSTracking.SegmentsColumns;
 import org.spontaneous.db.GPSTracking.Tracks;
 import org.spontaneous.db.GPSTracking.TracksColumns;
 import org.spontaneous.db.GPSTracking.Waypoints;
 import org.spontaneous.trackservice.util.TrackingServiceConstants;
+import org.spontaneous.utility.Constants;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -55,6 +60,8 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
+import android.renderscript.ScriptGroup.Binding;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
@@ -135,10 +142,9 @@ public class RemoteService extends Service implements LocationListener {
   private boolean mShowingGpsDisabled;
 
   private WayPointModel mWayPointModel;
+  private TrackModel mTrackData;
 
   private boolean mStartNextSegment;
-
-  private String mSources;
 
   private Location mPreviousLocation;
 
@@ -222,7 +228,7 @@ public class RemoteService extends Service implements LocationListener {
         if (checkLocation == null || checkLocation.getTime() + RemoteService.this.mCheckPeriod < new Date().getTime()) {
           Log.w(TAG, "GPS system failed to produce a location during logging: " + checkLocation);
           RemoteService.this.mLoggingState = TrackingServiceConstants.PAUSED;
-          resumeLogging();
+          resumeLogging(-1l);
 
           // if (mStatusMonitor) {
           // soundGpsSignalAlarm();
@@ -251,6 +257,8 @@ public class RemoteService extends Service implements LocationListener {
 
     // Get start location if available
 
+	registerExceptionHandler();  
+	
     // Display a notification about us starting.
     showNotification();
 
@@ -362,9 +370,9 @@ public class RemoteService extends Service implements LocationListener {
     }
 
     @Override
-    public long resumeLogging() throws RemoteException {
+    public long resumeLogging(long trackId) throws RemoteException {
 
-      RemoteService.this.resumeLogging();
+      RemoteService.this.resumeLogging(trackId);
       return RemoteService.this.mSegmentId;
     }
 
@@ -539,76 +547,80 @@ public class RemoteService extends Service implements LocationListener {
 
   }
 
-  @Override
-  public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void onProviderEnabled(String provider) {
-
-    this.mStartNextSegment = true;
-  }
-
-  @Override
-  public void onProviderDisabled(String provider) {
-
-    // TODO Auto-generated method stub
-
-  }
-
   public synchronized void startLogging(Location startLocation) {
 
     if (DEBUG) {
       Log.d(TAG, "startLogging()");
     }
 
-    if (this.mLoggingState == TrackingServiceConstants.STOPPED) {
-      startNewTrack(startLocation);
-      // sendRequestLocationUpdatesMessage();
-      // sendRequestStatusUpdateMessage();
-      this.mLoggingState = TrackingServiceConstants.LOGGING;
-      updateWakeLock();
-      // startNotification();
-      // crashProtectState();
-      // broadCastLoggingState();
+    Long userId = getUserId();
+    if (this.mLoggingState == TrackingServiceConstants.STOPPED && userId != null) {
+    	
+    	startNewTrack(startLocation, userId);
+    	mTrackData = readTrackAndSegmentsById(this.mTrackId);
+    	
+    	// sendRequestLocationUpdatesMessage();
+    	// sendRequestStatusUpdateMessage();
+    	this.mLoggingState = TrackingServiceConstants.LOGGING;
+    	updateWakeLock();
+    	// startNotification();
+    	// crashProtectState();
+    	// broadCastLoggingState();
 
-      long intervaltime = 0;
-      float distance = 0;
-      this.mMaxAcceptableAccuracy = COARSE_ACCURACY;
-      intervaltime = FINE_INTERVAL;
-      distance = FINE_DISTANCE;
-      startListening(LocationManager.GPS_PROVIDER, intervaltime, distance);
+    	this.mMaxAcceptableAccuracy = COARSE_ACCURACY;
+    	long intervaltime = FINE_INTERVAL;
+    	float distance = FINE_DISTANCE;
+    	startListening(LocationManager.GPS_PROVIDER, intervaltime, distance);
     }
   }
 
+  private Long getUserId() {
+	  Long userId = null;
+	  SharedPreferences sharedPrefs = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE);
+	  if (sharedPrefs != null) {
+		  userId = sharedPrefs.getLong(Constants.PREF_USERID, -1L);
+	  }
+	  return userId;
+  }
+  
   public synchronized void pauseLogging() {
 
     this.mLoggingState = TrackingServiceConstants.PAUSED;
-    updateTrack();
     updateSegment();
+    updateTrack();
   }
 
-  public synchronized void resumeLogging() {
+  public synchronized void resumeLogging(Long trackId) {
 
     if (DEBUG) {
       Log.d(TAG, "resumeLogging()");
     }
 
-    if (this.mLoggingState == TrackingServiceConstants.PAUSED) {
-      if (this.mPrecision != TrackingServiceConstants.LOGGING_GLOBAL) {
-        this.mStartNextSegment = true;
-      }
-      // sendRequestLocationUpdatesMessage();
-      // sendRequestStatusUpdateMessage();
+    if (trackId > 0) {
+    	mTrackId = trackId;
+    	mTrackData = readTrackAndSegmentsById(this.mTrackId);
+    	this.mTotalDistance = mTrackData.getTotalDistance();
+    	
+    	this.mMaxAcceptableAccuracy = COARSE_ACCURACY;
+    	long intervaltime = FINE_INTERVAL;
+    	float distance = FINE_DISTANCE;
+    	startListening(LocationManager.GPS_PROVIDER, intervaltime, distance);
+    }
+    
+    if (this.mLoggingState == TrackingServiceConstants.PAUSED || 
+    		this.mLoggingState == TrackingServiceConstants.STOPPED) {
+    	
+    	if (this.mPrecision != TrackingServiceConstants.LOGGING_GLOBAL) {
+    		this.mStartNextSegment = true;
+    	}
+    	// sendRequestLocationUpdatesMessage();
+    	// sendRequestStatusUpdateMessage();
 
-      this.mLoggingState = TrackingServiceConstants.LOGGING;
-      updateWakeLock();
-      // updateNotification();
-      // crashProtectState();
-      // broadCastLoggingState();
+    	this.mLoggingState = TrackingServiceConstants.LOGGING;
+    	updateWakeLock();
+    	// updateNotification();
+    	// crashProtectState();
+    	// broadCastLoggingState();
     }
   }
 
@@ -849,50 +861,36 @@ public class RemoteService extends Service implements LocationListener {
     this.mWaypointId = Long.parseLong(inserted.getLastPathSegment());
   }
 
-  private TrackModel getTracDataById(Long trackId) {
-
-    String[] mTrackColumns =
-        { Tracks._ID, Tracks.NAME, Tracks.TOTAL_DISTANCE, Tracks.TOTAL_DURATION, Tracks.CREATION_TIME };
-
-    // Read track
-    Uri trackReadUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(trackId));
-    Cursor mCursor = getContentResolver().query(trackReadUri, mTrackColumns, null, null, Tracks.CREATION_TIME);
-    if (mCursor != null && mCursor.moveToNext()) {
-      TrackModel trackModel =
-          new TrackModel(Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks._ID))), mCursor.getString(mCursor
-              .getColumnIndex(Tracks.NAME)), Float.valueOf(mCursor.getString(mCursor
-              .getColumnIndex(Tracks.TOTAL_DISTANCE))), Long.valueOf(mCursor.getString(mCursor
-              .getColumnIndex(Tracks.TOTAL_DURATION))), Long.valueOf(mCursor.getString(mCursor
-              .getColumnIndex(Tracks.CREATION_TIME))));
-      return trackModel;
-    }
-    return null;
-  }
-
   /**
-   * Update Track Store the current total distance of the track. Store the current total duration of the track.
+   * Update Track 
+   * Store the current total distance of the track. 
+   * Store the current total duration of the track.
    */
   private void updateTrack() {
 
     // Get current total duration
-    TrackModel trackModel = getTracDataById(this.mTrackId);
+    TrackModel trackModel = readTrackAndSegmentsById(this.mTrackId);
 
     ContentValues args = new ContentValues();
     args.put(TracksColumns.TOTAL_DISTANCE, this.mTotalDistance);
-    args.put(TracksColumns.TOTAL_DURATION, System.currentTimeMillis() - Long.valueOf(trackModel.getCreationDate()));
+    args.put(TracksColumns.TOTAL_DURATION, TrackingUtil.computeTotalDuration(trackModel));
 
     Uri trackUpdateUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(this.mTrackId));
     getContentResolver().update(trackUpdateUri, args, null, null);
+    
+    this.mTrackData = readTrackAndSegmentsById(this.mTrackId);
   }
 
   /**
    * Trigged by events that start a new track
    */
-  private void startNewTrack(Location startLocation) {
+  private void startNewTrack(Location startLocation, Long userId) {
 
     this.mTotalDistance = 0;
     this.mDistance = 0;
-    Uri newTrack = getContentResolver().insert(Tracks.CONTENT_URI, new ContentValues(0));
+    ContentValues contentValues = new ContentValues();
+    contentValues.put(Tracks.USER_ID, userId);
+    Uri newTrack = getContentResolver().insert(Tracks.CONTENT_URI, contentValues);
     this.mTrackId = Long.valueOf(newTrack.getLastPathSegment()).longValue();
 
     startNewSegment();
@@ -946,4 +944,84 @@ public class RemoteService extends Service implements LocationListener {
       }
     }
   }
+  
+
+  public TrackModel readTrackAndSegmentsById(Long trackId) {
+
+		TrackModel trackModel = null;
+
+		if (trackId != null) {
+		      String[] mTrackColumns = {
+		    		Tracks._ID,
+		   		   	Tracks.NAME,
+		   		   	Tracks.TOTAL_DISTANCE,
+		   		   	Tracks.TOTAL_DURATION,
+		   		   	Tracks.USER_ID,
+		   		   	Tracks.CREATION_TIME
+		      };
+
+		      // Read track
+		      Uri trackReadUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(trackId));
+		      Cursor mCursor = getContentResolver().query(trackReadUri, mTrackColumns, null, null, Tracks.CREATION_TIME);
+		      if (mCursor != null && mCursor.moveToNext()) {
+
+			      trackModel = new TrackModel(
+			    		Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks._ID))),
+			    		mCursor.getString(mCursor.getColumnIndex(Tracks.NAME)),
+						mCursor.getFloat(mCursor.getColumnIndex(Tracks.TOTAL_DISTANCE)),
+						mCursor.getLong(mCursor.getColumnIndex(Tracks.TOTAL_DURATION)),
+						mCursor.getLong(mCursor.getColumnIndex(Tracks.CREATION_TIME)),
+						Integer.valueOf(mCursor.getColumnIndex(Tracks.USER_ID))
+						);
+
+			      // Read Segments and wayPoints
+			      String[] mSegmentsColumns = {
+			    		  BaseColumns._ID,
+				   		  SegmentsColumns.TRACK,
+				   		  SegmentsColumns.START_TIME,
+				   		  SegmentsColumns.END_TIME
+				      };
+			      Uri segmentReadUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(trackId) + "/segments/");
+			      Cursor mSegmentsCursor = getContentResolver().query(segmentReadUri, mSegmentsColumns, null, null, Segments._ID);
+
+			      if (mSegmentsCursor != null) {
+				      SegmentModel segmentModel = null;
+				      while (mSegmentsCursor.moveToNext()) {
+				    	  segmentModel = new SegmentModel();
+				    	  segmentModel.setId(Long.valueOf(mSegmentsCursor.getString(mSegmentsCursor.getColumnIndex(Segments._ID))));
+				    	  segmentModel.setTrackId(Long.valueOf(mSegmentsCursor.getString(mSegmentsCursor.getColumnIndex(Segments.TRACK))));
+				    	  segmentModel.setStartTimeInMillis(mSegmentsCursor.getLong(mSegmentsCursor.getColumnIndex(Segments.START_TIME)));
+				    	  segmentModel.setEndTimeInMillis(mSegmentsCursor.getLong(mSegmentsCursor.getColumnIndex(Segments.END_TIME)));
+				    	  trackModel.addSegment(segmentModel);
+				      }
+			      }
+		      }
+		}
+		return trackModel;
+	}
+	
+	private void registerExceptionHandler() {
+		if(!(Thread.getDefaultUncaughtExceptionHandler() instanceof CustomExceptionHandler)) {
+			Thread.setDefaultUncaughtExceptionHandler(new CustomExceptionHandler(
+					getExternalCacheDir().toString(), null));
+		}
+	}
+
+	@Override
+	public void onStatusChanged(String provider, int status, Bundle extras) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onProviderEnabled(String provider) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onProviderDisabled(String provider) {
+		// TODO Auto-generated method stub
+		
+	}
 }

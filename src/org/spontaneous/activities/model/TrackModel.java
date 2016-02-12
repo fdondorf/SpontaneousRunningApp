@@ -15,15 +15,17 @@ public class TrackModel {
 	private Float totalDistance;
 	private Long totalDuration;
 	private Long creationTime;
+	private Integer userId;
 	private List<SegmentModel> segments = new ArrayList<SegmentModel>();
 	
-	public TrackModel(Long id, String name, Float totalDistance, Long totalDuration, Long creationTime) {
+	public TrackModel(Long id, String name, Float totalDistance, Long totalDuration, Long creationTime, Integer userId) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.totalDistance = totalDistance;
 		this.totalDuration = totalDuration;
 		this.creationTime = creationTime;
+		this.userId = userId;
 	}
 	
 	public Long getId() {
@@ -64,6 +66,14 @@ public class TrackModel {
 	
 	public void setCreationDate(Long creationTime) {
 		this.creationTime = creationTime;
+	}
+
+	public Integer getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Integer userId) {
+		this.userId = userId;
 	}
 
 	public List<SegmentModel> getSegments() {

@@ -34,12 +34,26 @@ public class CustomArrayAdapter extends ArrayAdapter<TrackModel> {
 		  TextView firstLineLeft = (TextView) rowView.findViewById(R.id.firstLine_left);
 		  TextView firstLineRight = (TextView) rowView.findViewById(R.id.firstLine_right);
 		  TextView secondLine = (TextView) rowView.findViewById(R.id.secondLine);
+		  TextView secondLineRight = (TextView) rowView.findViewById(R.id.secondLine_right);
+
 		  ImageView imageView = (ImageView) rowView.findViewById(R.id.icon);
-		  firstLineLeft.setText("Aktivität " + position);
+		  
+		  int pos = position + 1;
+		  firstLineLeft.setText("Aktivität " + pos);
 		  firstLineRight.setText(StringUtil.getDistanceString(values.get(position).getTotalDistance()));
-		  secondLine.setText(DateUtil.printDate(values.get(position).getCreationDate()));
-	      imageView.setImageResource(R.drawable.ic_plusone_medium_off_client);
+		  //secondLine.setText(DateUtil.millisToShortDHMS(values.get(position).getTotalDuration()));
+		  secondLine.setText(getSecondLineLeftText(position));
+		  secondLineRight.setText(DateUtil.printDate(values.get(position).getCreationDate()));
+	      imageView.setImageResource(R.drawable.ic_activity_dark);
 
 		  return rowView;
+	  }
+	  
+	  private String getSecondLineLeftText(int position) {
+		  StringBuilder builder = new StringBuilder();
+		  builder.append(DateUtil.printDate(values.get(position).getCreationDate()));
+		  builder.append(" - ");
+		  builder.append(values.get(position).getUserId());
+		  return builder.toString();
 	  }
 }

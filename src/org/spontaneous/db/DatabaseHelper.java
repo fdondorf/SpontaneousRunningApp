@@ -1,22 +1,14 @@
 package org.spontaneous.db;
 
-import java.util.Date;
-
-
-
-
-
-
-
-
-
-
+import org.spontaneous.activities.model.UserModel;
 import org.spontaneous.db.GPSTracking.Media;
 import org.spontaneous.db.GPSTracking.MediaColumns;
 import org.spontaneous.db.GPSTracking.MetaData;
 import org.spontaneous.db.GPSTracking.Segments;
 import org.spontaneous.db.GPSTracking.Tracks;
 import org.spontaneous.db.GPSTracking.TracksColumns;
+import org.spontaneous.db.GPSTracking.User;
+import org.spontaneous.db.GPSTracking.UserColumns;
 import org.spontaneous.db.GPSTracking.Waypoints;
 import org.spontaneous.db.GPSTracking.WaypointsColumns;
 
@@ -58,6 +50,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
    public void onCreate(SQLiteDatabase db) {
       db.execSQL(Waypoints.CREATE_STATEMENT);
       db.execSQL(Segments.CREATE_STATMENT);
+      db.execSQL(User.CREATE_STATEMENT);
       db.execSQL(Tracks.CREATE_STATEMENT);
       //db.execSQL(Media.CREATE_STATEMENT);
       //db.execSQL(MetaData.CREATE_STATEMENT);
@@ -74,32 +67,35 @@ public class DatabaseHelper extends SQLiteOpenHelper {
    public void onUpgrade(SQLiteDatabase db, int current, int targetVersion) {
       Log.i(TAG, "Upgrading db from " + current + " to " + targetVersion);
       
-      if (current == 1) { // From 1 to 2 ( Total Distance )
+      if (current == 1) { // From 1 to 2 ( Table User )
+    	  for (String statement : GPSTracking.User.UPGRADE_STATEMENT_1_TO_2) {
+    		  db.execSQL(statement);
+    	  }
     	  for (String statement : GPSTracking.Tracks.UPGRADE_STATEMENT_1_TO_2) {
     		  db.execSQL(statement);
     	  }
     	  current = 2;
       }
       
-      if (current <= 2)  { // From 1-2 to 3 (these before are the same before)
-    	  for (String statement : GPSTracking.Waypoints.UPGRADE_STATEMENT_2_TO_3) {
-    		  db.execSQL(statement);
-    	  }
-          current = 3;
-      }
-      
-      if (current <= 3)  { // From 3 to 4 (these before are the same before)
-    	  for (String statement : GPSTracking.Segments.UPGRADE_STATEMENT_3_TO_4) {
-    		  db.execSQL(statement);
-    	  }
-          current = 4;
-      }
-      if (current <= 4)  { // From 4 to 5
-    	  for (String statement : GPSTracking.Tracks.UPGRADE_STATEMENT_4_TO_5) {
-    		  db.execSQL(statement);
-    	  }
-          current = 5;
-      }
+//      if (current <= 2)  { // From 1-2 to 3 (these before are the same before)
+//    	  for (String statement : GPSTracking.Waypoints.UPGRADE_STATEMENT_2_TO_3) {
+//    		  db.execSQL(statement);
+//    	  }
+//          current = 3;
+//      }
+//      
+//      if (current <= 3)  { // From 3 to 4 (these before are the same before)
+//    	  for (String statement : GPSTracking.Segments.UPGRADE_STATEMENT_3_TO_4) {
+//    		  db.execSQL(statement);
+//    	  }
+//          current = 4;
+//      }
+//      if (current <= 4)  { // From 4 to 5
+//    	  for (String statement : GPSTracking.Tracks.UPGRADE_STATEMENT_4_TO_5) {
+//    		  db.execSQL(statement);
+//    	  }
+//          current = 5;
+//      }
       
 //      if (current == 6) // From 6 to 7 ( no changes ) 
 //      {
@@ -633,22 +629,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     * 
     * @return
     */
-   long toNextTrack(String name) {
-      long currentTime = System.currentTimeMillis();
-      float totalDistance = 0f;
-      ContentValues args = new ContentValues();
-      args.put(TracksColumns.NAME, name);
-      args.put(TracksColumns.CREATION_TIME, currentTime);
-      args.put(TracksColumns.TOTAL_DISTANCE, totalDistance);
-      args.put(TracksColumns.TOTAL_DURATION, 0);
+   long toNextTrack(String name, Long userId) {
+	   
+	   long currentTime = System.currentTimeMillis();
+	   float totalDistance = 0f;
+	   ContentValues args = new ContentValues();
+	   args.put(TracksColumns.NAME, name);
+	   args.put(TracksColumns.CREATION_TIME, currentTime);
+	   args.put(TracksColumns.TOTAL_DISTANCE, totalDistance);
+	   args.put(TracksColumns.TOTAL_DURATION, 0);
+	   args.put(TracksColumns.USER_ID, userId);
+	   
+	   SQLiteDatabase sqldb = getWritableDatabase();
+	   long trackId = sqldb.insert(Tracks.TABLE, null, args);
 
-      SQLiteDatabase sqldb = getWritableDatabase();
-      long trackId = sqldb.insert(Tracks.TABLE, null, args);
+	   ContentResolver resolver = this.mContext.getContentResolver();
+	   resolver.notifyChange(Tracks.CONTENT_URI, null);
 
-      ContentResolver resolver = this.mContext.getContentResolver();
-      resolver.notifyChange(Tracks.CONTENT_URI, null);
-
-      return trackId;
+	   return trackId;
    }
 
    /**
@@ -669,5 +667,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
       resolver.notifyChange(Uri.withAppendedPath(Tracks.CONTENT_URI, trackId + "/segments"), null);
 
       return segmentId;
+   }
+   
+   /**
+    * Move to a fresh track with a new first segment for this track
+    * 
+    * @return
+    */
+   long createUser(UserModel user) {
+      long currentTime = System.currentTimeMillis();
+      
+      ContentValues args = new ContentValues();
+      args.put(UserColumns.FIRSTNAME, user.getFirstname());
+      args.put(UserColumns.LASTNAME, user.getLastname());
+      args.put(UserColumns.EMAIL, user.getEmail());
+      args.put(UserColumns.PASSWORD, user.getPassword());
+      args.put(UserColumns.CREATION_TIME, currentTime);
+      
+      SQLiteDatabase sqldb = getWritableDatabase();
+      long userId = sqldb.insert(User.TABLE, null, args);
+
+      ContentResolver resolver = this.mContext.getContentResolver();
+      resolver.notifyChange(Tracks.CONTENT_URI, null);
+
+      return userId;
    }
 }

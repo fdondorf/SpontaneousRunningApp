@@ -7,7 +7,6 @@
         android:id="@+id/action_settings"
         android:orderInCategory="100"
         android:title="@string/action_settings"
-        android:icon="@drawable/abc_ic_menu_copy_mtrl_am_alpha"
-        app:showAsAction="never"/>
+        android:icon="@drawable/btn_circle_add"/>
 
 </menu>

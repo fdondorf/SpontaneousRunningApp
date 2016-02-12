@@ -35,9 +35,10 @@ public class SplitTimeArrayAdapter extends ArrayAdapter<SplitTimeModel> {
 		  TextView firstLineLeft = (TextView) rowView.findViewById(R.id.firstLine_left);
 		  TextView firstLineRight = (TextView) rowView.findViewById(R.id.firstLine_right);
 		  ImageView imageView = (ImageView) rowView.findViewById(R.id.icon);
-		  firstLineLeft.setText("Kilometer " + position);
+		  int pos = position + 1;
+		  firstLineLeft.setText("Kilometer " + pos);
 		  firstLineRight.setText(DateUtil.millisToShortDHMS(values.get(position).getTime()));
-	      imageView.setImageResource(R.drawable.ic_plusone_medium_off_client);
+	      imageView.setImageResource(R.drawable.ic_splittime);
 
 		  return rowView;
 	  }

@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: C:\\Projekte\\SpontaneousRunning\\workspaceapp\\SpontaneousRunningApp\\src\\org\\spontaneous\\trackservice\\IRemoteService.aidl
+ * Original file: C:\\Projekte\\SpontaneousRunning\\workspaceApp\\main\\SpontaneousRunningApp\\src\\org\\spontaneous\\trackservice\\IRemoteService.aidl
  */
 package org.spontaneous.trackservice;
 /**
@@ -97,7 +97,9 @@ return true;
 case TRANSACTION_resumeLogging:
 {
 data.enforceInterface(DESCRIPTOR);
-long _result = this.resumeLogging();
+long _arg0;
+_arg0 = data.readLong();
+long _result = this.resumeLogging(_arg0);
 reply.writeNoException();
 reply.writeLong(_result);
 return true;
@@ -220,13 +222,14 @@ _reply.recycle();
 _data.recycle();
 }
 }
-@Override public long resumeLogging() throws android.os.RemoteException
+@Override public long resumeLogging(long trackId) throws android.os.RemoteException
 {
 android.os.Parcel _data = android.os.Parcel.obtain();
 android.os.Parcel _reply = android.os.Parcel.obtain();
 long _result;
 try {
 _data.writeInterfaceToken(DESCRIPTOR);
+_data.writeLong(trackId);
 mRemote.transact(Stub.TRANSACTION_resumeLogging, _data, _reply, 0);
 _reply.readException();
 _result = _reply.readLong();
@@ -273,6 +276,6 @@ public void unregisterCallback(org.spontaneous.trackservice.IRemoteServiceCallba
 public int loggingState() throws android.os.RemoteException;
 public long startLogging(android.location.Location startLocation) throws android.os.RemoteException;
 public void pauseLogging() throws android.os.RemoteException;
-public long resumeLogging() throws android.os.RemoteException;
+public long resumeLogging(long trackId) throws android.os.RemoteException;
 public void stopLogging() throws android.os.RemoteException;
 }

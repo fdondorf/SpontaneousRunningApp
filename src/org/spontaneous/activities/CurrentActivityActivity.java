@@ -1,27 +1,39 @@
 package org.spontaneous.activities;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.spontaneous.R;
+import org.spontaneous.activities.adapter.SplitTimeArrayAdapter;
 import org.spontaneous.activities.model.GeoPoint;
+import org.spontaneous.activities.model.GeoPointModel;
+import org.spontaneous.activities.model.SplitTimeModel;
 import org.spontaneous.activities.model.TrackModel;
+import org.spontaneous.activities.util.CustomExceptionHandler;
+import org.spontaneous.activities.util.DateUtil;
 import org.spontaneous.activities.util.DialogHelper;
 import org.spontaneous.activities.util.StringUtil;
 import org.spontaneous.core.ITrackingService;
+import org.spontaneous.core.TrackingUtil;
 import org.spontaneous.core.impl.TrackingServiceImpl;
-import org.spontaneous.db.GPSTracking.Tracks;
 import org.spontaneous.trackservice.IRemoteService;
 import org.spontaneous.trackservice.IRemoteServiceCallback;
 import org.spontaneous.trackservice.RemoteService;
 import org.spontaneous.trackservice.WayPointModel;
 import org.spontaneous.trackservice.util.TrackingServiceConstants;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.LatLng;
+
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.Cursor;
+import android.content.SharedPreferences;
 import android.location.Location;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -31,20 +43,30 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.Chronometer;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ViewFlipper;
 
 public class CurrentActivityActivity extends Activity {
 
 	private static final String TAG = "CurrentActivityActivity";
 
+	private static final Float KILOMETER = 1000f;
+
 	private static final int RESULT_ACTIVITY_SAVED = 1;
+	private static final int RESULT_ACTIVITY_RESUMED = 2;
 	private static final int RESULT_DELETED = 3;
 
+	private SharedPreferences sharedPrefs;
+	private static final String PREFERENCES = "PREFS";
+	private static final String STOPTIME = "TIMEWHENSTOPPED";
+	
 	private ITrackingService trackingService = TrackingServiceImpl.getInstance(this);
 
 	private Context mContext;
@@ -54,18 +76,29 @@ public class CurrentActivityActivity extends Activity {
 
     private int mLoggingState = TrackingServiceConstants.UNKNOWN;
 
+    private List<GeoPointModel> geoPoints = null;
+
 	// GUI
+    private GoogleMap map = null;
+    
 	private Button mStopButton;
     private Button mPauseButton;
     private Button mResumeButton;
+    private ViewFlipper viewFlipper;
 	private TextView latituteField;
 	private TextView longitudeField;
 	private TextView distanceField;
 	private TextView speedField;
+	private TextView mCaloriesField;
 	private Chronometer mChronometer;
     private TextView mCallbackText;
+    private ListView listView;
+    private TextView mCurrentTimePerUnit;
+    
     private boolean mIsBound;
 
+    private float lastX;
+    
 	// Data
 	private WayPointModel mTrackData = new WayPointModel();
 	private Location mStartLocation;
@@ -79,27 +112,42 @@ public class CurrentActivityActivity extends Activity {
 	  public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
 
-	    setContentView(R.layout.fragment_currentactivity);
-
+	    setContentView(R.layout.layout_current_activity);
+	    
 	    mContext = this;
 
+	    sharedPrefs = getSharedPreferences(PREFERENCES, MODE_PRIVATE);
+	    
+	    registerExceptionHandler();
+	    
 	    // Read start location
 	    Bundle data = getIntent().getExtras();
 	    if (data != null) {
-	    	Long tId = data.getLong(TrackingServiceConstants.TRACK_ID);
+	    	//Long tId = data.getLong(TrackingServiceConstants.TRACK_ID);
 	    	mStartLocation = (Location) data.getParcelable(TrackingServiceConstants.START_LOCATION);
 	    }
 
+	    // Map
+	    map = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
+		        .getMap();
+		map.setMyLocationEnabled(true);
+		if (mStartLocation != null) {
+			LatLng start = new LatLng(mStartLocation.getLatitude(), mStartLocation.getLongitude());
+			map.moveCamera(CameraUpdateFactory.newLatLngZoom(start, 15));
+		}
+		
+	    viewFlipper = (ViewFlipper) findViewById(R.id.viewflipper);
+	    
 	    latituteField = (TextView) findViewById(R.id.latitudeField);
 	    longitudeField = (TextView) findViewById(R.id.longitudeField);
-	    distanceField = (TextView) findViewById(R.id.distanceField);
-	    distanceField.setText("0.0 km");
-	    speedField = (TextView) findViewById(R.id.speedField);
-	    speedField.setText("0 km/h");
+	    distanceField = (TextView) findViewById(R.id.distanceText);
+	    distanceField.setText("0.0");
+	    speedField = (TextView) findViewById(R.id.speedText);
+	    speedField.setText("0");
+	    mCaloriesField = (TextView) findViewById(R.id.caloriesValue);
 
 	    mChronometer = (Chronometer) findViewById(R.id.chronometer);
 
-	    // TODO: Muss das hier gesetzt werden? StartListening macht das auch!!!
 	    mTrackData.setStartTime(System.currentTimeMillis());
 
 	    mCallbackText = (TextView)findViewById(R.id.callback);
@@ -117,13 +165,73 @@ public class CurrentActivityActivity extends Activity {
 	    mResumeButton.setVisibility(View.GONE);
 	    mResumeButton.setOnClickListener(mResumeListener);
 
+	    // Aktueller Schnitt
+	    mCurrentTimePerUnit = (TextView) findViewById(R.id.currentAveragePerUnit);
+	    mCurrentTimePerUnit.setText("00:00");
+	    
+	    // Splittimes
+	    List<SplitTimeModel> splitTimes = new ArrayList<SplitTimeModel>();//createDummySplitTimes();//computeAverageSpeedPerUnit(geoPoints, KILOMETER);
+		listView = (ListView) findViewById(R.id.splitTimes);
+		listView.setAdapter(new SplitTimeArrayAdapter(this, splitTimes));
+	    
 	    // Starte und Binde den Background-Logging-Service
 	    startAndBindService();
 
 	    // Starte Chronometer
 	    mChronometer.start();
+	    
+	    computeAverageSpeed();
+	    computeCaloriesValue();
 	  }
 
+	  public boolean onTouchEvent(MotionEvent touchevent) {
+	 
+		  switch (touchevent.getAction()) {
+
+	  	  	case MotionEvent.ACTION_DOWN: 
+	  	            lastX = touchevent.getX();
+	  	            break;
+	  
+	  	        case MotionEvent.ACTION_UP: 
+	  	            float currentX = touchevent.getX();
+
+	  	            // Handling left to right screen swap.
+	  	            if (lastX < currentX) {
+	  	            	
+	  	                // If there aren't any other children, just break.
+	  	                if (viewFlipper.getDisplayedChild() == 0)
+	  	                    break;
+
+	  	                // Next screen comes in from left.
+	  	                viewFlipper.setInAnimation(this, R.anim.slide_in_from_left);
+
+	  	                // Current screen goes out from right. 
+	  	                viewFlipper.setOutAnimation(this, R.anim.slide_out_to_right);
+	  
+	  	                // Display next screen.
+	  	                viewFlipper.showNext();
+	  	            }
+	  	            // Handling right to left screen swap.
+	  	             if (lastX > currentX) {
+	  	            	 
+	  	                 // If there is a child (to the left), kust break.
+	  	                 if (viewFlipper.getDisplayedChild() == 1)
+	  	                     break;
+
+	  	                 // Next screen comes in from right.
+	  	                 viewFlipper.setInAnimation(this, R.anim.slide_in_from_right);
+
+	  	                // Current screen goes out from left. 
+	  	                 viewFlipper.setOutAnimation(this, R.anim.slide_out_to_left);
+
+	  	                // Display previous screen.
+	  	                 viewFlipper.showPrevious();
+	  	             }
+	  	             break;
+	  	        }
+	  	         return false;
+	  	    }
+	  
 	  private void startAndBindService() {
 		  // Make sure the service is started. It will continue running
 		  // until someone calls stopService().
@@ -155,9 +263,9 @@ public class CurrentActivityActivity extends Activity {
 			}
 	  }
 
-	  private void resumeLogging () {
+	  private void resumeLogging (long trackId) {
 		  try {
-				mService.resumeLogging();
+				mService.resumeLogging(trackId);
 			} catch (RemoteException e) {
 				e.printStackTrace();
 				DialogHelper.createStandardErrorDialog(this);
@@ -246,6 +354,10 @@ public class CurrentActivityActivity extends Activity {
 	    // Starte und Binde den Background-Logging-Service
 	    if (mService == null && !mIsBound) {
 	    	startAndBindService();
+	    	setButtonState(View.VISIBLE, View.GONE);
+			setChronometerState(true);
+			computeAverageSpeed();
+	    	computeCaloriesValue();
 	    }
 	    else if (!mIsBound) {
 
@@ -264,82 +376,55 @@ public class CurrentActivityActivity extends Activity {
 	    // 2. Von ActivitySummary zurück --> Status "Unbind" and "STOPPED" --> ServiceConnection
 	    // 3. Activity "paused" und nicht verwendet --> Status "Bind" and "PAUSED" --> hier
 
-	    // TODOs
-	    // 1. Abfrage des Logging-Status des Services
-	    // 1.1 Checke ob Service läuft und ob gebunden ist (Wenn nein, tue dies)
-	    // 2. Logging-Status = Pause
-	    // 2.1. Lade letzten Stand der Daten und zeige diese an
-	    // 2.2. Setze Buttons korrekt
-	    // 2.3. Setze chronometer auf korrekten wert aber gestoppt
-	    // 3. Logging-Status = Stopped
-	    // 3.1 Aufruf resumeLogging und speichern des Segments
-	    // 4 Logging-Status = Logging
-	    // 4.1 Lade aktuellen Stand der Daten und zeige diese an
-	    // 4.2 Setze Buttons korrekt
-	    // 4.3 Setze Chronometer auf korrekten Wert und Starte
-
 	    try {
+	    	
+
+		    int logState = 0;
+		    if (mService != null)
+		    	logState = mService.loggingState();
+		    
+	    	
 			if (mService != null && mService.loggingState() == TrackingServiceConstants.STOPPED) {
-				mTrackData.setSegmentId(mService.resumeLogging());
+				mTrackData.setSegmentId(mService.resumeLogging(mTrackData.getTrackId().longValue()));
 				setButtonState(View.VISIBLE, View.GONE);
-				setChronometerState(true);
+				//setChronometerState(true);
 			}
 			else if (mService != null && mService.loggingState() == TrackingServiceConstants.PAUSED) {
 				setButtonState(View.GONE, View.VISIBLE);
-				setChronometerState(false);
+				//setChronometerState(false);
+			}
+			else if (mService != null && mService.loggingState() == TrackingServiceConstants.LOGGING) {
+				setButtonState(View.VISIBLE, View.GONE);
+				//setChronometerState(true);
 			}
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-//	    mPauseButton.setVisibility(View.VISIBLE);
-//	    mResumeButton.setVisibility(View.GONE);
-//
-//	    timeWhenStopped = mChronometer.getBase() - SystemClock.elapsedRealtime();
-//	   	mChronometer.setBase(SystemClock.elapsedRealtime() + timeWhenStopped);
-//	   	mChronometer.start();
 	}
 
 	private void setChronometerState(boolean start) {
-		timeWhenStopped = mChronometer.getBase() - SystemClock.elapsedRealtime();
-		//mChronometer.setBase(SystemClock.elapsedRealtime() + timeWhenStopped);
-		TrackModel trackModel = trackingService.readTrackById(mTrackData.getTrackId()); //getTrackDataById(mTrackData.getTrackId());
-		mTrackData.setTotalTime(Long.valueOf(String.valueOf(trackModel.getTotalDuration())));
 
-		mChronometer.setBase(SystemClock.elapsedRealtime() + timeWhenStopped -
-				mTrackData.getTotalTime());
-		if (start)
-			mChronometer.start();
-		else {
-			mChronometer.stop();
+		TrackModel trackModel = trackingService.readTrackById(mTrackData.getTrackId());
+		mTrackData.setTotalTime(trackModel.getTotalDuration());
+
+		// Update Chronometer
+		if (!start) {
+	    	timeWhenStopped = mChronometer.getBase() - SystemClock.elapsedRealtime();
+	    	SharedPreferences.Editor editor = sharedPrefs.edit();
+			editor.putLong(STOPTIME, timeWhenStopped);
+	        editor.commit();
+	    	mChronometer.stop();
+		}
+		
+		if (start) {
+			SharedPreferences sharedPrefs = getSharedPreferences(PREFERENCES, MODE_PRIVATE);
+    		long stopTime = sharedPrefs.getLong(STOPTIME, 0);
+    		mChronometer.setBase(SystemClock.elapsedRealtime() + stopTime);
+    		mChronometer.start();
 		}
 	}
 
-	private TrackModel getTrackDataById(Long trackId) {
-		   String[] mTrackColumns = {
-		    		Tracks._ID,
-		   		   	Tracks.NAME,
-		   		   	Tracks.TOTAL_DISTANCE,
-		   		   	Tracks.TOTAL_DURATION,
-		   		   	Tracks.CREATION_TIME
-		      };
-
-		      // Read track
-		      Uri trackReadUri = Uri.withAppendedPath(Tracks.CONTENT_URI, String.valueOf(trackId));
-		      Cursor mCursor = this.getContentResolver().query(trackReadUri, mTrackColumns, null, null, Tracks.CREATION_TIME);
-		      if (mCursor != null && mCursor.moveToNext()) {
-			      TrackModel trackModel = new TrackModel(
-			    		Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks._ID))),
-			    		mCursor.getString(mCursor.getColumnIndex(Tracks.NAME)),
-						Float.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.TOTAL_DISTANCE))),
-						Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.TOTAL_DURATION))),
-						Long.valueOf(mCursor.getString(mCursor.getColumnIndex(Tracks.CREATION_TIME)))
-						);
-			      return trackModel;
-		      }
-		      return null;
-	   }
 
 	private void setButtonState(int pauseBtnState, int resumeBtnState) {
 		mPauseButton.setVisibility(pauseBtnState);
@@ -349,7 +434,9 @@ public class CurrentActivityActivity extends Activity {
 	@Override
 	  protected void onPause() {
 	    super.onPause();
-	    timeWhenStopped = mChronometer.getBase() - SystemClock.elapsedRealtime();
+	    SharedPreferences.Editor editor = sharedPrefs.edit();
+		editor.putLong(STOPTIME, timeWhenStopped);
+        editor.commit();
 	  }
 
 	  @Override
@@ -366,6 +453,10 @@ public class CurrentActivityActivity extends Activity {
 		  }
 		  else if (resultCode == RESULT_ACTIVITY_SAVED){
 			  finish();
+		  }
+		  else if (resultCode == RESULT_ACTIVITY_RESUMED){
+			  mTrackData.setTrackId(intent.getLongExtra(TrackingServiceConstants.TRACK_ID, -1));
+			  System.out.println(mTrackData.getTrackId());
 		  }
 	  }
 
@@ -397,7 +488,7 @@ public class CurrentActivityActivity extends Activity {
 			    	if (mLoggingState == TrackingServiceConstants.STOPPED) {
 			    		mService.registerCallback(mCallback);
 				    	mTrackData.setSegmentId(
-				    			mService.resumeLogging());
+				    			mService.resumeLogging(mTrackData.getTrackId().longValue()));
 			    	}
 			    	else {
 				    	mService.registerCallback(mCallback);
@@ -445,15 +536,9 @@ public class CurrentActivityActivity extends Activity {
 
 	    	// Button Dynamic
 	    	setButtonState(View.GONE, View.VISIBLE);
-//	    	mPauseButton.setVisibility(View.GONE);
-//        	mResumeButton.setVisibility(View.VISIBLE);
 
 	    	// Update Chronometer
 	    	setChronometerState(false);
-//	    	timeWhenStopped = mChronometer.getBase() - SystemClock.elapsedRealtime();
-//        	mChronometer.stop();
-//        	mTrackData.setTotalTime(mChronometer.getBase());
-
 
 	    }
     };
@@ -464,14 +549,14 @@ public class CurrentActivityActivity extends Activity {
 	    	// Button Dynamic
 	    	setButtonState(View.VISIBLE, View.GONE);
 
-	    	resumeLogging();
+	    	resumeLogging(mTrackData.getTrackId().longValue());
 
 	    	// Update Chronometer
 	    	setChronometerState(true);
-//	    	mChronometer.setBase(SystemClock.elapsedRealtime() + timeWhenStopped);
-//        	mChronometer.start();
-//        	mTrackData.setTotalTime(mChronometer.getBase());
-
+	    	mTrackData.setTotalTime(mChronometer.getBase() - SystemClock.elapsedRealtime());
+	    	
+	    	computeAverageSpeed();
+	    	computeCaloriesValue();
 	    }
     };
 
@@ -481,9 +566,7 @@ public class CurrentActivityActivity extends Activity {
 	    	// Update Chronometer TODO Notwendig?
 	    	// Muss vor stopAndUnbind geschehen
 	    	setChronometerState(false);
-//	    	timeWhenStopped = mChronometer.getBase() - SystemClock.elapsedRealtime();
-//        	mChronometer.stop();
-//        	mTrackData.setTotalTime(mChronometer.getBase());
+	    	mTrackData.setTotalTime(mChronometer.getBase() - SystemClock.elapsedRealtime());
 
         	stopAndUnbindService();
 
@@ -494,7 +577,7 @@ public class CurrentActivityActivity extends Activity {
 	    	intent.putExtra(TrackingServiceConstants.TRACK_ID, mTrackData.getTrackId());
 	    	intent.putExtra(TrackingServiceConstants.REQUEST_CODE, 2);
 	    	intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-	    	startActivity(intent);
+	    	startActivityForResult(intent, RESULT_ACTIVITY_RESUMED);
 	    }
     };
 
@@ -580,11 +663,30 @@ public class CurrentActivityActivity extends Activity {
 			    	mTrackData.setSegmentId(wayPointModel.getSegmentId());
 			    	mTrackData.setWayPointId(wayPointModel.getWayPointId());
 			    	mTrackData.setGeopoint(wayPointModel.getGeopoint());
+			    	mTrackData.setTotalDistance(wayPointModel.getTotalDistance());
+			    	mTrackData.setTotalTime(wayPointModel.getTotalTime());
+			    	
 			    	GeoPoint lastGeoPoint = wayPointModel.getGeopoint();
 				    latituteField.setText(String.valueOf(lastGeoPoint.getLatitude()));
 				    longitudeField.setText(String.valueOf(lastGeoPoint.getLongitude()));
-				    distanceField.setText(StringUtil.getDistanceString(wayPointModel.getTotalDistance()));
-				    speedField.setText(StringUtil.getSpeedString(lastGeoPoint.getSpeed()));
+				    distanceField.setText(StringUtil.getDistanceStringWithoutUnit(wayPointModel.getTotalDistance()));
+				    speedField.setText(StringUtil.getSpeedStringWithoutUnit(lastGeoPoint.getSpeed()));
+				    
+				    // 1. Berechne Schnitt des Tracks
+				    //Long averageTimePerUnit = TrackingUtil.computeAverageTimePerKilometer(wayPointModel.getTotalTime(), wayPointModel.getTotalDistance());
+				    //mCurrentTimePerUnit.setText(DateUtil.millisToShortDHMS(averageTimePerUnit));
+				    
+				    // 2. Erstelle Linie
+				    geoPoints = trackingService.getGeoPointsByTrack(wayPointModel.getTrackId());
+				    TrackingUtil.drawCurrentTrackOnMap(mContext, geoPoints, map, lastGeoPoint);
+				    
+				    // 3. Berechne aktuelle Durchschnittszeiten
+				    TrackModel trackModel = trackingService.readTrackById(wayPointModel.getTrackId());
+					List<GeoPointModel> geoPoints = trackingService.getGeoPointsByTrack(wayPointModel.getTrackId());
+					List<SplitTimeModel> splitTimes = TrackingUtil.computeAverageSpeedPerUnit(trackModel, geoPoints, KILOMETER);
+					listView = (ListView) findViewById(R.id.splitTimes);
+					listView.setAdapter(new SplitTimeArrayAdapter(mContext, splitTimes));
+				    
 				    break;
 			    default:
 			    	super.handleMessage(msg);
@@ -592,12 +694,92 @@ public class CurrentActivityActivity extends Activity {
 	    }
     };
 
-//    private GeoPoint geLastGeoPoint(WayPointModel wayPointModel) {
-//
-//    	int size = wayPointModel.getGeopoints().size();
-//    	if (size > 0) {
-//    		return wayPointModel.getGeopoints().get(size -1);
-//    	}
-//    	return null;
-//    }
+    private void computeAverageSpeed() {
+
+	    Thread timer = new Thread() { //new thread    
+	    	
+	    	Long averageTimePerUnit = 0L;	
+	    	Long totalDuration = 0L;
+	    	
+	        public void run() {
+	            Boolean b = true;
+	            try {
+	                do {
+	                    sleep(1000);
+
+	                    runOnUiThread(new Runnable() {  
+	                    	
+	                    @Override
+	                    public void run() {
+	                    	
+	                    	totalDuration = SystemClock.elapsedRealtime() - mChronometer.getBase();
+	                    	averageTimePerUnit =
+	                    			TrackingUtil.computeAverageTimePerKilometer(totalDuration, 
+	                    					mTrackData.getTotalDistance());
+	                    	mCurrentTimePerUnit.setText(DateUtil.millisToShortDHMS(averageTimePerUnit));
+	                    }
+	                });
+
+	                }
+
+	                while (mService != null && mService.loggingState() == TrackingServiceConstants.LOGGING);
+	                //while (b == true);
+	            } catch (InterruptedException e) {
+	                e.printStackTrace();
+	            } catch (RemoteException re) {
+	                re.printStackTrace();
+	            }
+	            finally {
+	            }
+	        };
+	    };
+	    timer.start();
+	}
+    
+    private void computeCaloriesValue() {
+
+	    Thread timer = new Thread() { //new thread    
+	
+	    	Long caloriesValue = 0L;
+	    	Integer weight = 75;
+	    	
+	        public void run() {
+	            Boolean b = true;
+	            try {
+	                do {
+	                    sleep(1000);
+
+	                    runOnUiThread(new Runnable() {  
+	                    	
+	                    @Override
+	                    public void run() {
+	                    	
+	                    	caloriesValue =
+	                    			TrackingUtil.computeCalories(weight, 
+	                    					mTrackData.getTotalDistance());
+	                    	mCaloriesField.setText(String.valueOf(caloriesValue));
+	                    }
+	                });
+
+	                }
+
+	                while (mService != null && mService.loggingState() == TrackingServiceConstants.LOGGING);
+	                //while (b == true);
+	            } catch (InterruptedException e) {
+	                e.printStackTrace();
+	            } catch (RemoteException re) {
+	                re.printStackTrace();
+	            }
+	            finally {
+	            }
+	        };
+	    };
+	    timer.start();
+	}
+	private void registerExceptionHandler() {
+		if(!(Thread.getDefaultUncaughtExceptionHandler() instanceof CustomExceptionHandler)) {
+			Thread.setDefaultUncaughtExceptionHandler(new CustomExceptionHandler(
+					getExternalCacheDir().toString(), null));
+		}
+	}
 }

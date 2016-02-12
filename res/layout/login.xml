@@ -1,70 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent" >
+    android:layout_height="fill_parent" 
+    android:orientation="vertical" 
+    android:background="@color/ColorPrimary">
 
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="200dip"
         android:orientation="vertical"
-        android:padding="10dip" >
-
-        <TextView
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dip"
-            android:text="@string/login_title"
-            android:textSize="25sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/loginEmail"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:hint="Enter your Email ID"
-            android:inputType="textEmailAddress" />
-
-        <TextView
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dip"
-            android:text="Passwort" />
-
-        <EditText
-            android:id="@+id/loginPassword"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:hint="Enter Password"
-            android:inputType="textPassword" />
-
-        <TextView
-            android:id="@+id/login_error"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:padding="10dip"
-            android:textColor="#e30000"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnLogin"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dip"
-            android:background="#ff6347"
-            android:onClick="loginUser"
-            android:text="Login"
-            android:textColor="#fff" />
-
-        <Button
-            android:id="@+id/btnLinkToRegisterScreen"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="40dip"
-            android:background="@null"
-            android:onClick="navigatetoRegisterActivity"
-            android:text="Signup"
-            android:textColor="#228b22"
-            android:textStyle="bold" />
+        android:background="@android:color/white"
+        android:padding="10dip">
+        
+        <TextView 
+            android:layout_width="match_parent"
+        	android:layout_height="match_parent"
+        	android:gravity="center"
+        	android:text="@string/app_name"
+        	android:textSize="30sp"
+        	android:textStyle="bold"
+        	android:textColor="@color/ColorPrimary"
+        />
     </LinearLayout>
 
-</ScrollView>
+    <ScrollView
+    	android:layout_width="fill_parent"
+    	android:layout_height="fill_parent" >
+	    
+	  <LinearLayout
+	        android:layout_width="fill_parent"
+	        android:layout_height="wrap_content"
+	        android:orientation="vertical"
+	        android:padding="10dip"
+	        android:background="@color/ColorPrimary">
+
+	        <EditText
+	            android:id="@+id/loginEmail"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:hint="@string/loginEmail"
+	            android:textColorHint="@android:color/white"
+	            android:textColor="@android:color/white"
+	            android:inputType="textEmailAddress" />
+	
+
+	        <EditText
+	            android:id="@+id/loginPassword"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:hint="@string/loginPwd"
+	            android:textColor="@android:color/white"
+	           	android:textColorHint="@android:color/white"
+	            android:inputType="textPassword" />
+	
+	        <CheckBox android:id="@+id/cb_stayLoggedIn"
+        		android:layout_width="wrap_content"
+        		android:layout_height="wrap_content"
+        		android:text="@string/stayLoggedIn"
+        		android:textColor="@android:color/white"/>
+	        
+	        <TextView
+	            android:id="@+id/login_error"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:padding="10dip"
+	            android:textColor="#e30000"
+	            android:textStyle="bold" />
+	
+	        <Button
+	            android:id="@+id/btnLogin"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:layout_marginTop="20dip"
+	            android:background="@color/ColorSecondary"
+	            android:onClick="loginUser"
+	            android:text="@string/loginBtn"
+	            android:textColor="@android:color/white" />
+
+	        <Button
+	            android:id="@+id/btnLinkToRegisterScreen"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:layout_marginTop="20dip"
+	            android:background="@null"
+	            android:onClick="navigatetoRegisterActivity"
+	            android:text="@string/loginRegister"
+	            android:textColor="@android:color/white"/>
+	
+	        <ToggleButton
+	            android:id="@+id/server_login_enabled"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:text="Skip Login" />
+
+    	</LinearLayout>
+	</ScrollView>
+</LinearLayout>

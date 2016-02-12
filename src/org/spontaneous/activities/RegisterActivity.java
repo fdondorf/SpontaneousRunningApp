@@ -3,6 +3,10 @@ package org.spontaneous.activities;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.spontaneous.R;
+import org.spontaneous.activities.model.UserModel;
+import org.spontaneous.core.ITrackingService;
+import org.spontaneous.core.impl.TrackingServiceImpl;
+import org.spontaneous.core.impl.TrackingServiceRESTImpl;
 import org.spontaneous.utility.Utility;
 
 import android.app.Activity;
@@ -25,38 +29,36 @@ public class RegisterActivity extends Activity {
 	
 	private static final String IP_ADRESS = "10.44.210.150:8080";
 	
-    // Progress Dialog Object
+	private ITrackingService trackingService;
+	
     private ProgressDialog prgDialog;
     
-    // Error Msg TextView Object
     private TextView errorMsg;
-    
-    // Name Edit View Object
-    private EditText nameET;
-    
-    // Email Edit View Object
+
+    private EditText firstnameET;
+    private EditText lastnameET;
     private EditText emailET;
-    
-    // Passwprd Edit View Object
     private EditText pwdET;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.register);
-        // Find Error Msg Text View control by ID
+
+        trackingService = TrackingServiceImpl.getInstance(this);
+        
         errorMsg = (TextView)findViewById(R.id.register_error);
-        // Find Name Edit View control by ID
-        nameET = (EditText)findViewById(R.id.registerName);
-        // Find Email Edit View control by ID
+        
+        firstnameET = (EditText) findViewById(R.id.registerFirstname);
+        lastnameET = (EditText)findViewById(R.id.registerLastname);
+        
         emailET = (EditText)findViewById(R.id.registerEmail);
-        // Find Password Edit View control by ID
+
         pwdET = (EditText)findViewById(R.id.registerPassword);
+        
         // Instantiate Progress Dialog object
         prgDialog = new ProgressDialog(this);
-        // Set Progress Dialog Text
         prgDialog.setMessage("Please wait...");
-        // Set Cancelable as False
         prgDialog.setCancelable(false);
     }
  
@@ -65,27 +67,36 @@ public class RegisterActivity extends Activity {
      *
      * @param view
      */
-    public void registerUser(View view){
-        // Get NAme ET control value
-        String name = nameET.getText().toString();
-        // Get Email ET control value
+    public void registerUser(View view) {
+    	
+        String firstname = firstnameET.getText().toString();
+        String lastname = lastnameET.getText().toString();
+        
         String email = emailET.getText().toString();
-        // Get Password ET control value
         String password = pwdET.getText().toString();
+        
         // Instantiate Http Request Param Object
         RequestParams params = new RequestParams();
         // When Name Edit View, Email Edit View and Password Edit View have values other than Null
-        if (Utility.isNotNull(name) && Utility.isNotNull(email) && Utility.isNotNull(password)){
+        if (Utility.isNotNull(firstname) && Utility.isNotNull(lastname) && 
+        		Utility.isNotNull(email) && Utility.isNotNull(password)){
             // When Email entered is Valid
             if(Utility.validate(email)){
                 // Put Http parameter name with value of Name Edit View control
-                params.put("name", name);
-                // Put Http parameter username with value of Email Edit View control
+                params.put("name", firstname);
+                params.put("lastname", lastname);
                 params.put("username", email);
-                // Put Http parameter password with value of Password Edit View control
                 params.put("password", password);
+                
                 // Invoke RESTful Web Service with Http parameters
-                invokeWS(params);
+                //invokeWS(params);
+                UserModel user = new UserModel(null, firstname, lastname, email, password);
+                if (trackingService.register(user)) {
+                    Toast.makeText(getApplicationContext(), "Deine Registrierung war erfolgreich!", Toast.LENGTH_LONG).show();
+                }
+                else{
+                    errorMsg.setText("Fehler bei Registrierung!");
+                }
             }
             // When Email is invalid
             else{
@@ -175,7 +186,8 @@ public class RegisterActivity extends Activity {
      * Set degault values for Edit View controls
      */
     public void setDefaultValues(){
-        nameET.setText("");
+        firstnameET.setText("");
+    	lastnameET.setText("");
         emailET.setText("");
         pwdET.setText("");
     }

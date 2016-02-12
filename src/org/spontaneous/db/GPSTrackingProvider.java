@@ -4,11 +4,13 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.spontaneous.activities.model.UserModel;
 import org.spontaneous.db.GPSTracking.Media;
 import org.spontaneous.db.GPSTracking.MetaData;
 import org.spontaneous.db.GPSTracking.Segments;
 import org.spontaneous.db.GPSTracking.SegmentsColumns;
 import org.spontaneous.db.GPSTracking.Tracks;
+import org.spontaneous.db.GPSTracking.User;
 import org.spontaneous.db.GPSTracking.Waypoints;
 
 import android.app.SearchManager;
@@ -48,6 +50,8 @@ public class GPSTrackingProvider extends ContentProvider {
    private static final int WAYPOINT_METADATA = 17;
    private static final int METADATA          = 18;
    private static final int METADATA_ID       = 19;
+   private static final int USER       		  = 20;
+   private static final int USER_ID      	  = 21;
    private static final String[] SUGGEST_PROJECTION = 
       new String[] 
         { 
@@ -90,6 +94,8 @@ public class GPSTrackingProvider extends ContentProvider {
       GPSTrackingProvider.sURIMatcher.addURI( GPSTracking.AUTHORITY, "media/#", GPSTrackingProvider.MEDIA_ID );
       GPSTrackingProvider.sURIMatcher.addURI( GPSTracking.AUTHORITY, "metadata", GPSTrackingProvider.METADATA );
       GPSTrackingProvider.sURIMatcher.addURI( GPSTracking.AUTHORITY, "metadata/#", GPSTrackingProvider.METADATA_ID );
+      GPSTrackingProvider.sURIMatcher.addURI( GPSTracking.AUTHORITY, "user", GPSTrackingProvider.USER );
+      GPSTrackingProvider.sURIMatcher.addURI( GPSTracking.AUTHORITY, "user/login", GPSTrackingProvider.USER_ID );
       
       GPSTrackingProvider.sURIMatcher.addURI( GPSTracking.AUTHORITY, "live_folders/tracks", GPSTrackingProvider.LIVE_FOLDERS );
       GPSTrackingProvider.sURIMatcher.addURI( GPSTracking.AUTHORITY, "search_suggest_query", GPSTrackingProvider.SEARCH_SUGGEST_ID );
@@ -139,6 +145,12 @@ public class GPSTrackingProvider extends ContentProvider {
          case WAYPOINT_ID:
             mime = Waypoints.CONTENT_ITEM_TYPE;
             break;
+         case USER:
+        	 mime = User.CONTENT_TYPE;
+             break;
+         case USER_ID:
+        	 mime = User.CONTENT_ITEM_TYPE;
+             break;
          case MEDIA_ID:
          case TRACK_MEDIA:
          case SEGMENT_MEDIA:
@@ -174,6 +186,7 @@ public class GPSTrackingProvider extends ContentProvider {
          long segmentId = -1;
          long waypointId = -1;
          long mediaId = -1;
+         long userId = -1;
          String key;
          String value;
          switch (match)
@@ -244,9 +257,19 @@ public class GPSTrackingProvider extends ContentProvider {
                break;
             case TRACKS:
                String name = ( values == null ) ? "" : values.getAsString( Tracks.NAME );
-               trackId     = this.mDbHelper.toNextTrack( name );
+               userId = ( values == null ) ? -1 : values.getAsLong( Tracks.USER_ID );
+               trackId     = this.mDbHelper.toNextTrack( name, userId);
                insertedUri = ContentUris.withAppendedId( uri, trackId );
                break;
+            case USER:
+                String firstname = ( values == null ) ? "" : values.getAsString( User.FIRSTNAME );
+                String lastname = ( values == null ) ? "" : values.getAsString( User.LASTNAME );
+                String email = ( values == null ) ? "" : values.getAsString( User.EMAIL );
+                String pwd = ( values == null ) ? "" : values.getAsString( User.PASSWORD );
+                UserModel user = new UserModel(null, firstname, lastname, email, pwd);
+                userId     = this.mDbHelper.createUser( user );
+                insertedUri = ContentUris.withAppendedId( uri, userId );
+                break;
             case TRACK_METADATA:
                pathSegments = uri.getPathSegments();
                trackId      = Long.parseLong( pathSegments.get( 1 ) );
@@ -298,10 +321,10 @@ public class GPSTrackingProvider extends ContentProvider {
          String[] innerSelectionArgs = new String[]{};
          String sortorder = sortOrder;
          List<String> pathSegments = uri.getPathSegments();
-         switch (match)
-         {
+         switch (match) {
             case TRACKS:
                tableName = Tracks.TABLE;
+               innerSelection = Tracks.USER_ID + " = ?";
                break;
             case TRACK_ID:
                tableName = Tracks.TABLE;
@@ -333,6 +356,10 @@ public class GPSTrackingProvider extends ContentProvider {
                innerSelection = Segments.TRACK + " = ? ";
                innerSelectionArgs = new String[]{  pathSegments.get( 1 ) };
                break;
+            case USER_ID:
+            	tableName = User.TABLE;
+                innerSelection = User.EMAIL + " = ? and " + User.PASSWORD + " = ?";
+                break;
             case GPSTrackingProvider.MEDIA:
                tableName = Media.TABLE;
                break;
